@@ -2,7 +2,8 @@
 
 [BLAKE3](https://en.wikipedia.org/wiki/BLAKE_(hash_function)#BLAKE3) hashing
 for TypeScript/JS, compiled to WASM from the
-[`blake3`](https://crates.io/crates/blake3) Rust crate.
+[`blake3`](https://crates.io/crates/blake3) Rust crate,
+[@BLAKE3-team/BLAKE3](https://github.com/BLAKE3-team/BLAKE3).
 
 ## Install
 
