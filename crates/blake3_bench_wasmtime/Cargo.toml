@@ -1,0 +1,20 @@
+[package]
+name = "blake3_bench_wasmtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "BLAKE3 WASI component benchmarks using Wasmtime runtime"
+
+[[bin]]
+name = "blake3_bench_wasmtime"
+path = "src/main.rs"
+
+[dependencies]
+wasmtime = { workspace = true, features = ["component-model"] }
+wasmtime-wasi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

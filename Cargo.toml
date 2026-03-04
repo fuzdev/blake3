@@ -1,0 +1,94 @@
+[workspace]
+resolver = "2"
+members = ["crates/blake3_wasm_core", "crates/blake3_wasm", "crates/blake3_wasm_small", "crates/blake3_debug", "crates/blake3_component", "crates/blake3_bench_wasmtime"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/fuzdev/blake3"
+
+[workspace.dependencies]
+blake3 = { version = "1", default-features = false }
+wasmtime = "41"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+wasmtime-wasi = "41"
+wasm-bindgen = "0.2"
+wit-bindgen = "0.53"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unused_lifetimes = "warn"
+unused_qualifications = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+
+# Pedantic overrides
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+similar_names = "allow"
+too_many_lines = "allow"
+use_self = "allow"
+doc_markdown = "allow"
+unreadable_literal = "allow"
+option_if_let_else = "allow"
+if_not_else = "allow"
+match_same_arms = "allow"
+single_match_else = "allow"
+wildcard_imports = "allow"
+unused_self = "allow"
+unnested_or_patterns = "allow"
+explicit_iter_loop = "allow"
+match_wildcard_for_single_variants = "allow"
+needless_pass_by_value = "allow"
+bool_to_int_with_if = "allow"
+unnecessary_wraps = "allow"
+fn_params_excessive_bools = "allow"
+comparison_chain = "allow"
+large_enum_variant = "allow"
+too_long_first_doc_paragraph = "allow"
+struct_field_names = "allow"
+items_after_statements = "allow"
+implicit_hasher = "allow"
+return_self_not_must_use = "allow"
+needless_continue = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+cast_possible_truncation = "allow"
+cast_lossless = "allow"
+cast_possible_wrap = "allow"
+
+# Nursery overrides
+significant_drop_tightening = "allow"
+missing_const_for_fn = "allow"
+redundant_pub_crate = "allow"
+cognitive_complexity = "allow"
+future_not_send = "allow"
+unnecessary_literal_bound = "allow"
+equatable_if_let = "allow"
+useless_let_if_seq = "allow"
+elidable_lifetime_names = "allow"
+
+# Cargo overrides
+cargo_common_metadata = "allow"
+multiple_crate_versions = "allow"
+
+# Restriction lints
+dbg_macro = "warn"
+expect_used = "warn"
+panic = "warn"
+unwrap_used = "warn"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

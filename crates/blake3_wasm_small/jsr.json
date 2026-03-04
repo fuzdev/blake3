@@ -1,0 +1,19 @@
+{
+	"name": "@fuzdev/blake3-small",
+	"version": "0.0.1",
+	"license": "MIT",
+	"exports": {
+		".": "./mod.ts",
+		"./node": "./mod_node.ts"
+	},
+	"publish": {
+		"include": [
+			"mod.ts",
+			"mod_node.ts",
+			"types.ts",
+			"stream.ts",
+			"pkg/deno/",
+			"pkg/web/"
+		]
+	}
+}

@@ -1,0 +1,25 @@
+package fuzdev:blake3@0.0.1;
+
+interface hashing {
+	enum hash-error {
+		invalid-key-length,
+	}
+
+	hash: func(data: list<u8>) -> list<u8>;
+	keyed-hash: func(key: list<u8>, data: list<u8>) -> result<list<u8>, hash-error>;
+	derive-key: func(context: string, key-material: list<u8>) -> list<u8>;
+
+	resource hasher {
+		constructor();
+		new-keyed: static func(key: list<u8>) -> result<hasher, hash-error>;
+		new-derive-key: static func(context: string) -> hasher;
+		update: func(data: list<u8>);
+		finalize: func() -> list<u8>;
+		finalize-and-reset: func() -> list<u8>;
+		reset: func();
+	}
+}
+
+world blake3 {
+	export hashing;
+}

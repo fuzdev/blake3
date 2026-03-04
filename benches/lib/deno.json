@@ -1,0 +1,11 @@
+{
+	"imports": {
+		"@fuzdev/fuz_util": "npm:@fuzdev/fuz_util@0.52.1"
+	},
+	"fmt": {
+		"useTabs": true,
+		"lineWidth": 100,
+		"singleQuote": true,
+		"proseWrap": "preserve"
+	}
+}

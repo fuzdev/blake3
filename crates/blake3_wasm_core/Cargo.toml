@@ -1,0 +1,20 @@
+[package]
+name = "blake3_wasm_core"
+version.workspace = true
+edition.workspace = true
+description = "Shared BLAKE3 WASM bindings core (wasm-bindgen exports)"
+license.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+simd = ["blake3/wasm32_simd"]
+
+[dependencies]
+blake3.workspace = true
+wasm-bindgen.workspace = true
+
+[lints]
+workspace = true

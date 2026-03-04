@@ -1,0 +1,16 @@
+{
+  "version": "5",
+  "specifiers": {
+    "npm:@fuzdev/fuz_util@0.52.1": "0.52.1"
+  },
+  "npm": {
+    "@fuzdev/fuz_util@0.52.1": {
+      "integrity": "sha512-kOqhYkMi3liA9hd69/TGgUiBElfSwnijkxYg31Pea6YyLGqL0pd9uNj7mSHsCaVBUuV5hmVF1FbaBMO5fIeHxg=="
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "npm:@fuzdev/fuz_util@0.52.1"
+    ]
+  }
+}

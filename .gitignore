@@ -1,0 +1,18 @@
+node_modules/
+
+# Rust build output
+/target
+
+# WASM build output
+/crates/blake3_wasm/pkg
+/crates/blake3_wasm_small/pkg
+/crates/blake3_component/src/bindings.rs
+/pkg
+
+# Benchmark results (report.md is committed)
+/benches/results/*.json
+/benches/results/*.md
+!/benches/results/report.md
+
+# Publish pipeline sentinel (marks an in-progress wetrun for retry detection)
+.changeset/.publish-in-progress

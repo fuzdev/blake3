@@ -1,0 +1,59 @@
+{
+	"tasks": {
+		"build:wasm": "deno run --allow-read --allow-write --allow-run --allow-env scripts/build_wasm.ts",
+		"build:wasm:deno": "rm -rf crates/blake3_wasm/pkg/deno && RUSTFLAGS='-C opt-level=3 -C target-feature=+simd128' wasm-pack build crates/blake3_wasm --scope fuzdev --target deno --release --out-dir pkg/deno && deno run --allow-read --allow-write scripts/patch_deno_compile.ts crates/blake3_wasm/pkg/deno",
+		"build:wasm:web": "rm -rf crates/blake3_wasm/pkg/web && RUSTFLAGS='-C opt-level=3 -C target-feature=+simd128' wasm-pack build crates/blake3_wasm --scope fuzdev --target web --release --out-dir pkg/web && deno run --allow-read --allow-write scripts/patch_npm_package.ts crates/blake3_wasm/pkg/web",
+
+		"build:wasm:small": "deno task build:wasm:small:deno && deno task build:wasm:small:web",
+		"build:wasm:small:deno": "rm -rf crates/blake3_wasm_small/pkg/deno && RUSTFLAGS='-C opt-level=s' wasm-pack build crates/blake3_wasm_small --scope fuzdev --target deno --release --out-dir pkg/deno && deno run --allow-read --allow-write scripts/patch_deno_compile.ts crates/blake3_wasm_small/pkg/deno",
+		"build:wasm:small:web": "rm -rf crates/blake3_wasm_small/pkg/web && RUSTFLAGS='-C opt-level=s' wasm-pack build crates/blake3_wasm_small --scope fuzdev --target web --release --out-dir pkg/web && deno run --allow-read --allow-write scripts/patch_npm_package.ts crates/blake3_wasm_small/pkg/web",
+
+		"build:component": "RUSTFLAGS='-C opt-level=3 -C target-feature=+simd128' cargo component build -p blake3_component --release && mkdir -p pkg/component && cp target/wasm32-wasip1/release/blake3_component.wasm pkg/component/",
+
+		"clean": "cargo clean && rm -rf crates/blake3_wasm/pkg crates/blake3_wasm_small/pkg pkg && rm -rf benches/results",
+		"typecheck": "cargo check --workspace",
+		"test:rust": "cargo test --workspace",
+		"lint": "cargo clippy --workspace",
+		"check": "deno task typecheck && deno task test:rust && deno task lint && cargo fmt --all --check && deno fmt --check",
+		"format": "cargo fmt --all && deno fmt",
+
+		"test:deno": "deno test --allow-read scripts/compare.ts",
+		"test:deno:small": "deno test --allow-read scripts/compare.ts -- --small",
+		"test:npm": "PKG_DIR=crates/blake3_wasm/pkg/web node --test scripts/test_npm.js",
+		"test:npm:small": "PKG_DIR=crates/blake3_wasm_small/pkg/web node --test scripts/test_npm.js",
+		"test:component": "cargo run -p blake3_bench_wasmtime --release -- --compare",
+		"test": "deno task test:deno && deno task test:deno:small && deno task test:component && deno task test:npm && deno task test:npm:small",
+
+		"compare:wasm": "deno task build:wasm:deno && deno task test:deno",
+		"compare:small": "deno task build:wasm:small:deno && deno task test:deno:small",
+		"compare:component": "deno task build:component && deno task test:component",
+		"compare": "deno task compare:wasm && deno task compare:small && deno task compare:component",
+
+		"validate:npm": "deno task test:npm && deno task test:npm:small",
+		"validate:size": "deno run --allow-read scripts/validate_wasm_size.ts",
+		"validate:compile": "deno run --allow-read --allow-write=/tmp --allow-run scripts/validate_deno_compile.ts",
+		"validate:bench": "deno run --allow-read scripts/validate_bench_results.ts",
+		"validate": "deno task check && deno task build:wasm && deno task build:component && deno task test && deno task validate:size && deno task validate:compile",
+
+		"bench": "deno task bench:build && deno task bench:deno && deno task bench:node && deno task bench:bun && deno task bench:wasmtime:run && deno task bench:report && deno task validate:bench",
+		"bench:build": "deno task build:wasm && deno task build:component",
+		"bench:deno": "deno run --v8-flags=--expose-gc --allow-read --allow-write=benches/results --allow-env --allow-net --allow-run benches/deno/bench.ts",
+		"bench:node": "node --expose-gc benches/node/bench.ts",
+		"bench:bun": "BENCH_RUNTIME=Bun BENCH_OUTPUT=benches/results/bun.json bun benches/node/bench.ts",
+		"bench:wasmtime": "deno task build:component && deno task bench:wasmtime:run",
+		"bench:wasmtime:run": "cargo run -p blake3_bench_wasmtime --release",
+		"bench:report": "deno run --allow-read --allow-write=benches/results --allow-run --allow-env benches/report.ts",
+		"bench:report:md": "deno run --allow-read --allow-write=benches/results --allow-run --allow-env benches/report.ts --markdown",
+		"bench:diff": "deno run --allow-read --allow-env benches/diff.ts",
+		"bench:clean": "rm -rf benches/results",
+
+		"publish": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/publish.ts"
+	},
+	"fmt": {
+		"useTabs": true,
+		"lineWidth": 100,
+		"singleQuote": true,
+		"proseWrap": "preserve"
+	},
+	"exclude": ["node_modules", "target", ".claude"]
+}

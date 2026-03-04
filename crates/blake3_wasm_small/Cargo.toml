@@ -1,0 +1,24 @@
+[package]
+name = "blake3_wasm_small"
+version.workspace = true
+edition.workspace = true
+description = "BLAKE3 hashing compiled to WASM, size-optimized build without SIMD"
+license.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# wasm-opt flags:
+#   -Os                              Size-optimized post-processing
+#   --enable-* flags                 Enable WASM features for compatibility
+#   --strip-producers                Remove compiler metadata custom section
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Os", "--enable-bulk-memory", "--enable-nontrapping-float-to-int", "--enable-mutable-globals", "--enable-sign-ext", "--strip-producers"]
+
+[dependencies]
+blake3_wasm_core = { path = "../blake3_wasm_core" }
+wasm-bindgen.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,15 @@
+[package]
+name = "blake3_debug"
+version.workspace = true
+edition.workspace = true
+description = "Development utilities for blake3_wasm (comparison, test vectors)"
+
+[[bin]]
+name = "blake3_debug"
+path = "src/main.rs"
+
+[dependencies]
+blake3 = { workspace = true, features = ["std"] }
+
+[lints]
+workspace = true
