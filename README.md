@@ -22,7 +22,7 @@ and is 2-3x faster at 64KB+ inputs on Deno and Node.
 is ~30% smaller but loses the 2-3x SIMD gains
 (but it's up to ~2.5x faster on Bun, which has a WASM SIMD problem).
 See [benchmarks](#benchmarks) for details
-(includes a comparison to the SIMD-lacking
+(includes a comparison to the [SIMD-lacking](https://github.com/connor4312/blake3/issues/56)
 [@connor4312/blake3](https://github.com/connor4312/blake3),
 `blake3-wasm` on npm).
 
