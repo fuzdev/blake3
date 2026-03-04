@@ -134,7 +134,7 @@ const digest = await hash_stream(file.stream());
 ### blake3_wasm_small
 
 Size-optimized WASM bindings — identical API to blake3_wasm but depends on `blake3_wasm_core`
-without the `simd` feature, compiled with `-Os` optimization. Produces a ~34 KB binary (vs ~49 KB
+without the `simd` feature, compiled with `-Os` optimization. Produces a ~32 KB binary (vs ~47 KB
 for the SIMD build). Serves Bun users (where WASM SIMD is slower) and bundle-size-sensitive contexts.
 
 **Tradeoffs vs blake3_wasm:** 30% smaller binary, ~2.6x slower on Deno/Node at 64KB+ inputs,
@@ -346,7 +346,7 @@ The `fuzdev:blake3` WIT package (`wit/blake3.wit`) defines the component model i
 | Cargo profile  | `strip = true`                                 | No debug symbols                                                      |
 | RUSTFLAGS      | `-C opt-level=3`                               | Speed-optimized (overrides profile for WASM builds)                   |
 | RUSTFLAGS      | `-C target-feature=+simd128`                   | Enables WASM SIMD                                                     |
-| wasm-opt       | `-O3 --enable-simd [+flags] --strip-producers` | Speed-optimized post-processing, enable WASM features, strip metadata |
+| wasm-opt       | `-O3 --enable-simd --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers` | Speed-optimized post-processing, enable WASM features, strip metadata |
 | blake3 feature | `wasm32_simd`                                  | Hand-written SIMD compression                                         |
 | blake3 dep     | `default-features = false`                     | Omit `std` feature (not needed for WASM cdylib)                       |
 
@@ -364,8 +364,8 @@ Consolidated to one `-O3` package.
 
 | Build                              |    Size | vs npm:blake3-wasm |
 | ---------------------------------- | ------: | -----------------: |
-| blake3_wasm (SIMD, `-O3`)          | 49.0 KB |      +15,780 bytes |
-| blake3_wasm_small (no SIMD, `-Os`) | 34.3 KB |         +714 bytes |
+| blake3_wasm (SIMD, `-O3`)          | 46.8 KB |      +13,532 bytes |
+| blake3_wasm_small (no SIMD, `-Os`) | 31.8 KB |       -1,827 bytes |
 | npm:blake3-wasm                    | 33.6 KB |           baseline |
 
 The ~15 KB size difference between blake3_wasm and blake3_wasm_small is the SIMD code:
@@ -374,7 +374,7 @@ The ~15 KB size difference between blake3_wasm and blake3_wasm_small is the SIMD
 - **`-O3` vs `-Os`**: ~2-3 KB — aggressive inlining/unrolling for speed
 - **Miscellaneous**: ~1 KB
 
-blake3_wasm_small matches the npm reference within 714 bytes — effectively the same binary size.
+blake3_wasm_small is 1,827 bytes smaller than the npm reference — effectively the same binary size.
 
 Additional size optimizations applied:
 
@@ -392,7 +392,7 @@ Bun's WASM engine has poor SIMD performance — confirmed by blake3_wasm_small b
   partially offsets the overhead (see Q7 in benches/CLAUDE.md).
 - **Deno/Node.js**: blake3_wasm (SIMD) is ~2.6x _faster_ than blake3_wasm_small at 64KB+ inputs.
   At small inputs (32B, 1KB) the difference is ~1x on Deno; ~1.1-1.2x on Node.js.
-- **blake3_wasm_small** serves Bun users and bundle-size-sensitive contexts (34.3 KB vs 49.0 KB).
+- **blake3_wasm_small** serves Bun users and bundle-size-sensitive contexts (31.8 KB vs 46.8 KB).
 
 ## Publishing
 

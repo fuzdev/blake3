@@ -10,16 +10,16 @@ for TypeScript/JS, compiled to WASM from the
 Two builds with the same API:
 
 ```bash
-npm i @fuzdev/blake3_wasm        # SIMD — faster, 49 KB
-npm i @fuzdev/blake3_wasm_small  # no SIMD — smaller, 34 KB
+npm i @fuzdev/blake3_wasm        # SIMD — faster, 47 KB
+npm i @fuzdev/blake3_wasm_small  # no SIMD — smaller, 32 KB
 ```
 
 Use `blake3_wasm` unless optimizing bundle size (or using Bun with its current SIMD issue).
-It enables blake3's WASM SIMD optimizations and is 2-3x faster on Deno and Node.
-`blake3_wasm_small` is ~30% smaller and ~2x faster on Bun (which has a WASM SIMD regression).
+It enables blake3's WASM SIMD optimizations and is 2-3x faster at 64 KB+ inputs on Deno and Node.
+`blake3_wasm_small` is ~30% smaller and up to ~2.5x faster on Bun (which has a WASM SIMD regression).
 See [benchmarks](#benchmarks) for details
 (includes a comparison to the SIMD-lacking https://github.com/connor4312/blake3,
-`blake3` and `blake3-wasm` on npm).
+`blake3-wasm` on npm).
 
 Also available via `npm:` specifier in Deno:
 

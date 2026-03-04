@@ -13,7 +13,7 @@ Also contains the shared TypeScript source: `types.ts` (Blake3HasherInstance int
 
 WASM bindings via `wasm-bindgen`. Compiled with Rust `-O3` optimization, blake3's `wasm32_simd`
 feature (via blake3_wasm_core's `simd` feature) for hand-optimized WASM SIMD compression,
-and wasm-opt `-O3 --enable-simd [+feature flags] --strip-producers`.
+and wasm-opt `-O3 --enable-simd --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers`.
 
 The build uses `RUSTFLAGS='-C opt-level=3 -C target-feature=+simd128'` to override the workspace
 release profile (`opt-level=s`). The `wasm32_simd` Cargo feature enables blake3's hand-written
@@ -25,8 +25,8 @@ code at medium/large inputs.
 ## blake3_wasm_small
 
 Size-optimized WASM bindings — identical API to blake3_wasm but without SIMD. Compiled with
-`RUSTFLAGS='-C opt-level=s'` (no `+simd128`) and wasm-opt `-Os [+feature flags] --strip-producers`. Produces a ~34 KB binary vs
-~49 KB for the SIMD build. Depends on `blake3_wasm_core` without the `simd` feature, so blake3
+`RUSTFLAGS='-C opt-level=s'` (no `+simd128`) and wasm-opt `-Os --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers`. Produces a ~32 KB binary vs
+~47 KB for the SIMD build. Depends on `blake3_wasm_core` without the `simd` feature, so blake3
 uses its portable Rust compression code instead of hand-written SIMD.
 
 **Source**: `pub use blake3_wasm_core::*;` — delegates to the shared core crate.

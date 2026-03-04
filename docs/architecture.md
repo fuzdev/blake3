@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Own BLAKE3 WASM build from the `blake3` Rust crate, published as `@fuzdev/blake3_wasm` (SIMD, `-O3`, ~49 KB) for maximum throughput on Deno/Node.js and `@fuzdev/blake3_wasm_small` (no SIMD, `-Os`, ~34 KB) for Bun and bundle-size-sensitive contexts. Benchmark tooling compares against `npm:blake3-wasm`.
+Own BLAKE3 WASM build from the `blake3` Rust crate, published as `@fuzdev/blake3_wasm` (SIMD, `-O3`, ~47 KB) for maximum throughput on Deno/Node.js and `@fuzdev/blake3_wasm_small` (no SIMD, `-Os`, ~32 KB) for Bun and bundle-size-sensitive contexts. Benchmark tooling compares against `npm:blake3-wasm`.
 
 ## Crate Structure
 
@@ -52,14 +52,14 @@ Rust (blake3_wasm_core without simd)
     → pkg/component/blake3_component.wasm (WASI component)
 ```
 
-blake3_wasm/blake3_component: `RUSTFLAGS='-C opt-level=3 -C target-feature=+simd128'` and wasm-opt `-O3 --enable-simd [+feature flags] --strip-producers`.
-blake3_wasm_small: `RUSTFLAGS='-C opt-level=s'` (no SIMD flags) and wasm-opt `-Os [+feature flags] --strip-producers`.
+blake3_wasm/blake3_component: `RUSTFLAGS='-C opt-level=3 -C target-feature=+simd128'` and wasm-opt `-O3 --enable-simd --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers`.
+blake3_wasm_small: `RUSTFLAGS='-C opt-level=s'` (no SIMD flags) and wasm-opt `-Os --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers`.
 
 Note: wasm-pack doesn't support `--profile` (conflicts with `--release`), so RUSTFLAGS is the mechanism for overriding optimization level.
 
 ## Package Entry Points
 
-Deno and Node.js entry points import from `pkg/deno/` and `pkg/web/` respectively. Both share `types.ts` (re-exported from `blake3_wasm_core/types.ts`) for the `Blake3HasherInstance` interface. The web target's JS glue includes the `Symbol.dispose` prototype patch. `mod_node.ts` uses `node:fs` + wasm-bindgen's `initSync` to load WASM synchronously from the web target — no separate node target needed. Stream convenience functions are built by `make_stream_functions` in `stream.ts` and re-exported from each entry point.
+Deno and Node.js entry points import from `pkg/deno/` and `pkg/web/` respectively. Both share `types.ts` (re-exported from `blake3_wasm_core/types.ts`) for the `Blake3HasherInstance` interface. wasm-bindgen's JS glue includes `Symbol.dispose` on `Blake3Hasher` (all targets). `mod_node.ts` uses `node:fs` + wasm-bindgen's `initSync` to load WASM synchronously from the web target — no separate node target needed. Stream convenience functions are built by `make_stream_functions` in `stream.ts` and re-exported from each entry point.
 
 **Naming convention:** wasm-bindgen generates `initSync` (camelCase) in its JS output (`blake3_wasm.js`). This is a wasm-bindgen convention and cannot be changed without post-processing the generated file. The wrapper files (`index.js`, `browser.js`) re-export as `init_sync` for snake_case consistency with the rest of the API (`hash`, `keyed_hash`, etc.). `mod_node.ts` imports `initSync` internally but does not re-export it — consumers of `mod_node.ts` never see the camelCase name.
 
@@ -126,7 +126,7 @@ Wasmtime benchmarks the component via the WASI component model (hash, keyed_hash
 
 ### Pipeline
 
-`deno task bench` chains: `bench:build` → `bench:deno` → `bench:node` → `bench:bun` → `bench:wasmtime:run` → `bench:report`
+`deno task bench` chains: `bench:build` → `bench:deno` → `bench:node` → `bench:bun` → `bench:wasmtime:run` → `bench:report` → `validate:bench`
 
 Each entry point writes structured JSON to `benches/results/{runtime}.json` plus timestamped history files (`{timestamp}_{runtime}_{commit}.{json,md}`). The report auto-discovers the latest JSON files and produces a cross-runtime comparison with throughput, SIMD speedup table, and WASM binary sizes.
 
