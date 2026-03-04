@@ -26,7 +26,7 @@ See [benchmarks](#benchmarks) for details
 [@connor4312/blake3](https://github.com/connor4312/blake3),
 `blake3-wasm` on npm).
 
-Also available via `npm:` specifier in Deno:
+Also available via `npm:` specifier in Deno (jsr coming soon, user requests will speed it up):
 
 ```ts
 import { hash } from 'npm:@fuzdev/blake3_wasm';
