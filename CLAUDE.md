@@ -337,18 +337,18 @@ The `fuzdev:blake3` WIT package (`wit/blake3.wit`) defines the component model i
 
 ### Full optimization stack
 
-| Layer          | Setting                                        | Effect                                                                |
-| -------------- | ---------------------------------------------- | --------------------------------------------------------------------- |
-| Cargo profile  | `opt-level = "s"`                              | Size-optimized (overridden by RUSTFLAGS for WASM)                     |
-| Cargo profile  | `lto = true`                                   | Full link-time optimization, dead code elimination                    |
-| Cargo profile  | `codegen-units = 1`                            | Better cross-crate optimization                                       |
-| Cargo profile  | `panic = "abort"`                              | No unwinding machinery                                                |
-| Cargo profile  | `strip = true`                                 | No debug symbols                                                      |
-| RUSTFLAGS      | `-C opt-level=3`                               | Speed-optimized (overrides profile for WASM builds)                   |
-| RUSTFLAGS      | `-C target-feature=+simd128`                   | Enables WASM SIMD                                                     |
+| Layer          | Setting                                                                                                                                 | Effect                                                                |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Cargo profile  | `opt-level = "s"`                                                                                                                       | Size-optimized (overridden by RUSTFLAGS for WASM)                     |
+| Cargo profile  | `lto = true`                                                                                                                            | Full link-time optimization, dead code elimination                    |
+| Cargo profile  | `codegen-units = 1`                                                                                                                     | Better cross-crate optimization                                       |
+| Cargo profile  | `panic = "abort"`                                                                                                                       | No unwinding machinery                                                |
+| Cargo profile  | `strip = true`                                                                                                                          | No debug symbols                                                      |
+| RUSTFLAGS      | `-C opt-level=3`                                                                                                                        | Speed-optimized (overrides profile for WASM builds)                   |
+| RUSTFLAGS      | `-C target-feature=+simd128`                                                                                                            | Enables WASM SIMD                                                     |
 | wasm-opt       | `-O3 --enable-simd --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers` | Speed-optimized post-processing, enable WASM features, strip metadata |
-| blake3 feature | `wasm32_simd`                                  | Hand-written SIMD compression                                         |
-| blake3 dep     | `default-features = false`                     | Omit `std` feature (not needed for WASM cdylib)                       |
+| blake3 feature | `wasm32_simd`                                                                                                                           | Hand-written SIMD compression                                         |
+| blake3 dep     | `default-features = false`                                                                                                              | Omit `std` feature (not needed for WASM cdylib)                       |
 
 ### SIMD: the critical optimization
 
