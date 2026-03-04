@@ -109,7 +109,7 @@ const derived = await derive_key_stream('my-app', file.stream());
 
 All functions return 32-byte (256-bit) digests. BLAKE3 supports variable-length output (XOF)
 but this API does not currently expose it — 32 bytes covers most use cases and XOF may be added
-in the future.
+in the future (open a [discussion](https://github.com/fuzdev/blake3/discussions) if you'd like it).
 
 ### One-shot functions
 
