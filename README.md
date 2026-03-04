@@ -14,9 +14,13 @@ npm i @fuzdev/blake3_wasm        # SIMD — faster, 47 KB
 npm i @fuzdev/blake3_wasm_small  # no SIMD — smaller, 32 KB
 ```
 
-Use `blake3_wasm` unless optimizing bundle size (or using Bun with its current SIMD issue).
-It enables blake3's WASM SIMD optimizations and is 2-3x faster at 64 KB+ inputs on Deno and Node.
-`blake3_wasm_small` is ~30% smaller and up to ~2.5x faster on Bun (which has a WASM SIMD regression).
+Use [`@fuzdev/blake3_wasm`](https://www.npmjs.com/package/@fuzdev/blake3_wasm)
+unless optimizing bundle size (or using Bun with its current SIMD issue).
+It enables [blake3](https://crates.io/crates/blake3)'s WASM SIMD optimizations
+and is 2-3x faster at 64KB+ inputs on Deno and Node.
+[`@fuzdev/blake3_wasm_small`](https://www.npmjs.com/package/@fuzdev/blake3_wasm_small)
+is ~30% smaller but loses the 2-3x SIMD gains
+(but it's up to ~2.5x faster on Bun, which has a WASM SIMD problem).
 See [benchmarks](#benchmarks) for details
 (includes a comparison to the SIMD-lacking https://github.com/connor4312/blake3,
 `blake3-wasm` on npm).
