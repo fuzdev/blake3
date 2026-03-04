@@ -85,6 +85,21 @@ Node and Deno initialize automatically — `init()` is only needed in browsers.
 The browser entry uses `new URL('./blake3_wasm_bg.wasm', import.meta.url)` internally,
 which Vite and webpack handle automatically. Other bundlers may need a plugin for WASM assets.
 
+**Vite**: Exclude from dependency pre-bundling so the `.wasm` file resolves correctly:
+
+```ts
+// vite.config.ts
+export default {
+	optimizeDeps: {
+		exclude: ['@fuzdev/blake3_wasm'],
+	},
+};
+```
+
+Without this, Vite pre-bundles the JS into `.vite/deps/` but doesn't copy the WASM binary alongside it,
+causing a 404 at runtime. This is a [common Vite issue](https://vite.dev/guide/dep-pre-bundling)
+with WASM packages.
+
 For synchronous initialization in Web Workers, use `init_sync`:
 
 ```ts
