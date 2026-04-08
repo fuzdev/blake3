@@ -10,7 +10,7 @@ for TypeScript/JS, compiled to WASM from the
 Two builds with the same API:
 
 ```bash
-npm i @fuzdev/blake3_wasm        # SIMD — faster, 47 KB
+npm i @fuzdev/blake3_wasm        # SIMD — faster, 45 KB
 npm i @fuzdev/blake3_wasm_small  # no SIMD — smaller, 32 KB
 ```
 

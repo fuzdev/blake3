@@ -56,8 +56,8 @@ interface SizeCheck {
 }
 
 // Expected sizes with ±10 KB tolerance:
-// blake3_wasm (SIMD): ~50 KB (current: 50,185 bytes)
-// blake3_wasm_small (no SIMD): ~35 KB (current: 35,119 bytes)
+// blake3_wasm (SIMD): ~45 KB (current: 45,384 bytes)
+// blake3_wasm_small (no SIMD): ~32 KB (current: 32,251 bytes)
 const size_checks: SizeCheck[] = [
 	{
 		label: 'blake3_wasm deno',
