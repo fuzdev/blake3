@@ -262,6 +262,7 @@ deno compile --allow-read --include=path/to/pkg/deno my_script.ts
 ## Development
 
 ```bash
+npm i                          # install dev dependencies (benchmark comparison)
 cargo check --workspace        # fast typecheck
 deno task check                # full check (typecheck + test:rust + clippy + fmt)
 deno task compare              # build + correctness: all builds vs test vectors
