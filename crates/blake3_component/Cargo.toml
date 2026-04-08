@@ -31,9 +31,18 @@ module_name_repetitions = "allow"
 must_use_candidate = "allow"
 similar_names = "allow"
 too_many_lines = "allow"
+# wit-bindgen generated code
+same_length_and_capacity = "allow"
 use_self = "allow"
 cargo_common_metadata = "allow"
 multiple_crate_versions = "allow"
+# Restriction lints
+clone_on_ref_ptr = "warn"
+dbg_macro = "warn"
+expect_used = "warn"
+panic = "warn"
+todo = "warn"
+unwrap_used = "warn"
 
 [package.metadata.component]
 package = "fuzdev:blake3"

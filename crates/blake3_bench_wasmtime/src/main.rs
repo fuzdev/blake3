@@ -107,7 +107,7 @@ struct WasmSize {
 
 // ── Benchmark engine ─────────────────────────────────────────────────────────
 
-fn bench_duration_ms() -> u128 {
+fn bench_duration_ms() -> u64 {
     std::env::var("BENCH_DURATION")
         .ok()
         .and_then(|s| s.parse().ok())
@@ -161,13 +161,14 @@ fn percentile_sorted(s: &[f64], p: f64) -> f64 {
         return 0.0;
     }
     let h = p * (n - 1) as f64;
+    #[allow(clippy::cast_possible_truncation)]
     let lo = h.floor() as usize;
     let hi = (lo + 1).min(n - 1);
     let frac = h - lo as f64;
     s[lo] + frac * (s[hi] - s[lo])
 }
 
-/// MAD-based outlier removal matching fuz_util's `stats_outliers_mad`.
+/// MAD-based outlier removal matching `fuz_util`'s `stats_outliers_mad`.
 ///
 /// Algorithm:
 /// 1. Sort, compute median.
@@ -225,6 +226,7 @@ fn filter_outliers_mad(samples: &[f64]) -> Vec<f64> {
     }
 
     // Keep the 80% closest to median
+    #[allow(clippy::cast_possible_truncation)]
     let keep = (samples.len() as f64 * KEEP_RATIO).floor() as usize;
     let mut with_dist: Vec<(f64, f64)> = samples.iter().map(|&x| (x, (x - med).abs())).collect();
     with_dist.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
@@ -233,8 +235,7 @@ fn filter_outliers_mad(samples: &[f64]) -> Vec<f64> {
 }
 
 fn compute_stats(samples: &[f64]) -> BenchStats {
-    let cleaned = filter_outliers_mad(samples);
-    let mut s = cleaned;
+    let mut s = filter_outliers_mad(samples);
     s.sort_by(cmp_f64);
     let n = s.len();
     let sum: f64 = s.iter().sum();
@@ -276,10 +277,9 @@ fn compute_stats(samples: &[f64]) -> BenchStats {
 fn format_throughput(ops_per_second: f64, data_bytes: u64) -> String {
     let mb_s = ops_per_second * data_bytes as f64 / 1_000_000.0;
     if mb_s >= 1.0 {
-        format!(
-            "{} MB/s",
-            insert_commas(&format!("{}", mb_s.round() as u64))
-        )
+        #[allow(clippy::cast_possible_truncation)]
+        let mb_s_int = mb_s.round() as u64;
+        format!("{} MB/s", insert_commas(&format!("{mb_s_int}")))
     } else {
         format!("{:.1} KB/s", mb_s * 1000.0)
     }
@@ -350,7 +350,7 @@ fn bench_one_shot(
 
         // Benchmark
         let mut samples = Vec::new();
-        let deadline = Instant::now() + Duration::from_millis(bench_duration_ms() as u64);
+        let deadline = Instant::now() + Duration::from_millis(bench_duration_ms());
         while Instant::now() < deadline {
             let start = Instant::now();
             op(&instance, &mut store);
@@ -428,7 +428,7 @@ fn bench_streaming(
 
         // Benchmark
         let mut samples = Vec::new();
-        let deadline = Instant::now() + Duration::from_millis(bench_duration_ms() as u64);
+        let deadline = Instant::now() + Duration::from_millis(bench_duration_ms());
         while Instant::now() < deadline {
             let start = Instant::now();
             let hasher = hashing
@@ -496,7 +496,7 @@ impl TimeUnit {
         }
     }
 
-    fn label(&self) -> &'static str {
+    const fn label(&self) -> &'static str {
         match self {
             Self::Nanoseconds => "ns",
             Self::Microseconds => "\u{b5}s",
@@ -1089,15 +1089,15 @@ fn main() {
             } else {
                 String::new()
             };
-            if !throughput.is_empty() {
-                eprintln!(
-                    "  {:<28} {:>12}  {:>12}{}{}",
-                    result.name, throughput, time_str, ci_str, ratio_str,
-                );
-            } else {
+            if throughput.is_empty() {
                 eprintln!(
                     "  {:<28} {:>12}{}{}",
                     result.name, time_str, ci_str, ratio_str,
+                );
+            } else {
+                eprintln!(
+                    "  {:<28} {:>12}  {:>12}{}{}",
+                    result.name, throughput, time_str, ci_str, ratio_str,
                 );
             }
         }
@@ -1198,6 +1198,7 @@ fn chrono_free_timestamp() -> String {
     // Days since epoch to Y-M-D
     // Algorithm: Howard Hinnant, "chrono-Compatible Low-Level Date Algorithms"
     // https://howardhinnant.github.io/date_algorithms.html#civil_from_days
+    #[allow(clippy::cast_possible_wrap)]
     let z = days as i64 + 719_468;
     let era = z / 146_097;
     let doe = z - era * 146_097;

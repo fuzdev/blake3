@@ -27,6 +27,7 @@ fn cmd_hash(args: &[String]) {
         std::process::exit(1);
     };
 
+    #[allow(clippy::option_if_let_else)]
     let data = if let Some(text) = hex_input.strip_prefix("text:") {
         text.as_bytes().to_vec()
     } else {

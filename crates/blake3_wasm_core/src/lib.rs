@@ -16,6 +16,7 @@ pub fn hash(data: &[u8]) -> Vec<u8> {
 }
 
 /// Keyed hash (MAC). Key must be exactly 32 bytes.
+#[allow(clippy::missing_errors_doc)]
 #[wasm_bindgen]
 pub fn keyed_hash(key: &[u8], data: &[u8]) -> Result<Vec<u8>, JsError> {
     let key: [u8; 32] = key
@@ -57,7 +58,8 @@ impl Blake3Hasher {
     }
 
     /// Create a new keyed hasher. Key must be exactly 32 bytes.
-    pub fn new_keyed(key: &[u8]) -> Result<Blake3Hasher, JsError> {
+    #[allow(clippy::missing_errors_doc)]
+    pub fn new_keyed(key: &[u8]) -> Result<Self, JsError> {
         let key: [u8; 32] = key
             .try_into()
             .map_err(|_| JsError::new("key must be exactly 32 bytes"))?;
