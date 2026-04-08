@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/blake3_wasm_core", "crates/blake3_wasm", "crates/blake3_wasm_small", "crates/blake3_debug", "crates/blake3_component", "crates/blake3_bench_wasmtime"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/fuzdev/blake3"
