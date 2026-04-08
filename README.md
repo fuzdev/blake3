@@ -232,11 +232,18 @@ See [docs/architecture.md](docs/architecture.md) for crate structure, build pipe
 
 ## Building from source
 
-Requires [Rust](https://rustup.rs/), [wasm-pack](https://drager.github.io/wasm-pack/installer/),
-[Deno](https://deno.land/), and the WASM target (`rustup target add wasm32-unknown-unknown`).
+Requires [Rust](https://rustup.rs/), [wasm-pack](https://rustwasm.github.io/wasm-pack/),
+and [Deno](https://deno.land/).
 
 ```bash
-deno task build:wasm           # build all WASM targets
+# prerequisites
+cargo install wasm-pack
+rustup target add wasm32-unknown-unknown
+
+# build all WASM targets
+deno task build:wasm
+
+# or build individual targets
 deno task build:wasm:deno      # build for Deno (+ deno compile patch)
 deno task build:wasm:web       # build for web/Node (+ npm package)
 ```

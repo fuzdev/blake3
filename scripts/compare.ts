@@ -15,8 +15,21 @@
 import { assertEquals, assertRejects, assertThrows } from 'jsr:@std/assert';
 
 const small_mode = Deno.args.includes('--small');
-const mod_path = small_mode ? '../crates/blake3_wasm_small/mod.ts' : '../crates/blake3_wasm/mod.ts';
 const pkg_name = small_mode ? 'blake3_wasm_small' : 'blake3_wasm';
+const pkg_dir = small_mode ? 'crates/blake3_wasm_small' : 'crates/blake3_wasm';
+const artifact = `${pkg_dir}/pkg/deno/${pkg_name}.js`;
+
+try {
+	Deno.statSync(new URL(`../${artifact}`, import.meta.url));
+} catch {
+	throw new Error(
+		`WASM artifact not found: ${artifact}\n` +
+			`Run 'deno task ${small_mode ? 'compare:small' : 'compare:wasm'}' to build and test,` +
+			` or 'deno task build:wasm' to build all targets.`,
+	);
+}
+
+const mod_path = `../${pkg_dir}/mod.ts`;
 
 const {
 	Blake3Hasher,

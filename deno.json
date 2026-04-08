@@ -55,5 +55,5 @@
 		"singleQuote": true,
 		"proseWrap": "preserve"
 	},
-	"exclude": ["node_modules", "target", ".claude"]
+	"exclude": ["node_modules", "target", ".claude", ".changeset"]
 }

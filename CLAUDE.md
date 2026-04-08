@@ -312,9 +312,10 @@ The `fuzdev:blake3` WIT package (`wit/blake3.wit`) defines the component model i
 
 ## Tooling Requirements
 
+- **`wasm-pack`**: `cargo install wasm-pack` — wasm-bindgen builds for JS runtimes
+- **`wasm32-unknown-unknown` target**: `rustup target add wasm32-unknown-unknown` — required by wasm-pack
 - **`cargo-component`**: `cargo install cargo-component` — builds WASM components from Rust
-- **`wasm32-wasip1` target**: `rustup target add wasm32-wasip1`
-- **`wasm-pack`**: for wasm-bindgen builds (JS runtimes)
+- **`wasm32-wasip1` target**: `rustup target add wasm32-wasip1` — required by cargo-component
 
 ## Conventions
 
