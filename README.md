@@ -232,13 +232,13 @@ See [docs/architecture.md](docs/architecture.md) for crate structure, build pipe
 
 ## Building from source
 
-Requires [Rust](https://rustup.rs/), [wasm-pack](https://rustwasm.github.io/wasm-pack/),
-and [Deno](https://deno.land/).
+Requires [Rust](https://rustup.rs/) and [Deno](https://deno.land/).
 
 ```bash
 # prerequisites
 cargo install wasm-pack
-rustup target add wasm32-unknown-unknown
+cargo install cargo-component
+rustup target add wasm32-unknown-unknown wasm32-wasip1
 
 # build all WASM targets
 deno task build:wasm
@@ -248,6 +248,9 @@ deno task build:wasm:deno      # build for Deno (+ deno compile patch)
 deno task build:wasm:web       # build for web/Node (+ npm package)
 ```
 
+[`cargo-component`](https://github.com/bytecodealliance/cargo-component) and `wasm32-wasip1`
+are only needed for WASI component builds and Wasmtime benchmarks (`deno task bench`).
+
 The Deno build patches wasm-bindgen's `fetch()` to `Deno.readFileSync()` for
 [`deno compile`](https://docs.deno.com/runtime/reference/cli/compile/) compatibility.
 Include the `pkg/deno/` directory via `--include` so the WASM binary is embedded:
@@ -255,10 +258,6 @@ Include the `pkg/deno/` directory via `--include` so the WASM binary is embedded
 ```bash
 deno compile --allow-read --include=path/to/pkg/deno my_script.ts
 ```
-
-For WASI component builds and Wasmtime benchmarks, also install
-[`cargo-component`](https://github.com/bytecodealliance/cargo-component)
-and add the WASI target (`rustup target add wasm32-wasip1`).
 
 ## Development
 
