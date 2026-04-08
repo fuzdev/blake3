@@ -3,7 +3,7 @@
 > BLAKE3 hashing compiled to WASM from the `blake3` Rust crate
 
 Own WASM build of BLAKE3, packaged as `@fuzdev/blake3_wasm` and `@fuzdev/blake3_wasm_small`. Uses
-`-O3` optimization with the blake3 crate's hand-optimized WASM SIMD implementation (`wasm32_simd`
+`-Os` optimization with the blake3 crate's hand-optimized WASM SIMD implementation (`wasm32_simd`
 feature) for best throughput, plus a size-optimized build without SIMD.
 
 **Repository**: `github.com/fuzdev/blake3`
@@ -113,7 +113,7 @@ Has a `simd` feature that enables `blake3/wasm32_simd`. See `crates/CLAUDE.md` f
 
 ### blake3_wasm
 
-WASM bindings — SIMD build. Depends on `blake3_wasm_core` with `simd` feature. Compiled with `-O3`
+WASM bindings — SIMD build. Depends on `blake3_wasm_core` with `simd` feature. Compiled with `-Os`
 and blake3's `wasm32_simd` for hand-optimized WASM SIMD compression.
 
 Supports TC39 explicit resource management:
@@ -134,7 +134,7 @@ const digest = await hash_stream(file.stream());
 ### blake3_wasm_small
 
 Size-optimized WASM bindings — identical API to blake3_wasm but depends on `blake3_wasm_core`
-without the `simd` feature, compiled with `-Os` optimization. Produces a ~32 KB binary (vs ~47 KB
+without the `simd` feature, compiled with `-Os` optimization. Produces a ~32 KB binary (vs ~45 KB
 for the SIMD build). Serves Bun users (where WASM SIMD is slower) and bundle-size-sensitive contexts.
 
 **Tradeoffs vs blake3_wasm:** 30% smaller binary, ~2.6x slower on Deno/Node at 64KB+ inputs,
@@ -322,10 +322,10 @@ The `fuzdev:blake3` WIT package (`wit/blake3.wit`) defines the component model i
 - **Rust edition 2024**, resolver 2
 - **Strict clippy**: all + pedantic + nursery + cargo enabled
 - **`unsafe_code = "forbid"`** at workspace level
-- **Release profile**: workspace uses opt-level=s, WASM builds override to `-O3` via RUSTFLAGS
+- **Release profile**: workspace uses opt-level=s, WASM SIMD build also uses `-Os` via RUSTFLAGS (SIMD hot path uses `#[inline(always)]` so opt-level doesn't affect it)
 - **WASM SIMD**: blake3_wasm depends on blake3_wasm_core with `simd` feature + `-C target-feature=+simd128` in RUSTFLAGS
 - **WASM small**: blake3_wasm_small uses `-C opt-level=s` (no SIMD) with wasm-opt `-Os`
-- **wasm-opt**: blake3_wasm uses `-O3` with `--enable-simd`, blake3_wasm_small uses `-Os` (no SIMD flags)
+- **wasm-opt**: blake3_wasm uses `-Os` with `--enable-simd`, blake3_wasm_small uses `-Os` (no SIMD flags)
 - **Deno formatting**: tabs, 100 line width, single quotes
 - **Cross-runtime TS**: use `node:process`, `node:fs` (Deno supports these)
 - **RUSTFLAGS** for WASM optimization (wasm-pack doesn't support `--profile`)
@@ -338,44 +338,47 @@ The `fuzdev:blake3` WIT package (`wit/blake3.wit`) defines the component model i
 
 ### Full optimization stack
 
-| Layer          | Setting                                                                                                                                 | Effect                                                                |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Cargo profile  | `opt-level = "s"`                                                                                                                       | Size-optimized (overridden by RUSTFLAGS for WASM)                     |
-| Cargo profile  | `lto = true`                                                                                                                            | Full link-time optimization, dead code elimination                    |
-| Cargo profile  | `codegen-units = 1`                                                                                                                     | Better cross-crate optimization                                       |
-| Cargo profile  | `panic = "abort"`                                                                                                                       | No unwinding machinery                                                |
-| Cargo profile  | `strip = true`                                                                                                                          | No debug symbols                                                      |
-| RUSTFLAGS      | `-C opt-level=3`                                                                                                                        | Speed-optimized (overrides profile for WASM builds)                   |
-| RUSTFLAGS      | `-C target-feature=+simd128`                                                                                                            | Enables WASM SIMD                                                     |
-| wasm-opt       | `-O3 --enable-simd --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers` | Speed-optimized post-processing, enable WASM features, strip metadata |
-| blake3 feature | `wasm32_simd`                                                                                                                           | Hand-written SIMD compression                                         |
-| blake3 dep     | `default-features = false`                                                                                                              | Omit `std` feature (not needed for WASM cdylib)                       |
+| Layer          | Setting                                                                                                                                 | Effect                                                               |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Cargo profile  | `opt-level = "s"`                                                                                                                       | Size-optimized (overridden by RUSTFLAGS for WASM)                    |
+| Cargo profile  | `lto = true`                                                                                                                            | Full link-time optimization, dead code elimination                   |
+| Cargo profile  | `codegen-units = 1`                                                                                                                     | Better cross-crate optimization                                      |
+| Cargo profile  | `panic = "abort"`                                                                                                                       | No unwinding machinery                                               |
+| Cargo profile  | `strip = true`                                                                                                                          | No debug symbols                                                     |
+| RUSTFLAGS      | `-C opt-level=s`                                                                                                                        | Size-optimized (SIMD hot path unaffected — uses `#[inline(always)]`) |
+| RUSTFLAGS      | `-C target-feature=+simd128`                                                                                                            | Enables WASM SIMD                                                    |
+| wasm-opt       | `-Os --enable-simd --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers` | Size-optimized post-processing, enable WASM features, strip metadata |
+| blake3 feature | `wasm32_simd`                                                                                                                           | Hand-written SIMD compression                                        |
+| blake3 dep     | `default-features = false`                                                                                                              | Omit `std` feature (not needed for WASM cdylib)                      |
 
 ### SIMD: the critical optimization
 
-The build uses `-O3` with blake3's `wasm32_simd` feature for hand-optimized WASM SIMD compression.
+The build uses `-Os` with blake3's `wasm32_simd` feature for hand-optimized WASM SIMD compression.
 Without the `wasm32_simd` feature, both `-Os` and `-O3` builds used blake3's portable Rust code
 and performed ~2.5x slower at medium/large inputs. The SIMD feature was the critical optimization.
 
-With SIMD enabled, we benchmarked `-Os` vs `-O3`. The differences were small (5-17%) but `-O3`
-consistently won at small inputs (the most common hot path) with only ~5% binary size cost.
-Consolidated to one `-O3` package.
+With SIMD enabled, we verified that `-Os` vs `-O3` produces identical SIMD instruction counts
+(the SIMD compression uses `#[inline(always)]` so opt-level doesn't affect the hot path). Using
+`-Os` reduces the non-SIMD code (Merkle tree management, buffer handling) by ~2.4 KB with no
+measurable performance impact on the SIMD-dominated workloads.
 
 ### Binary sizes (measured)
 
 | Build                              |    Size | vs npm:blake3-wasm |
 | ---------------------------------- | ------: | -----------------: |
-| blake3_wasm (SIMD, `-O3`)          | 46.8 KB |      +13,532 bytes |
-| blake3_wasm_small (no SIMD, `-Os`) | 31.8 KB |       -1,827 bytes |
+| blake3_wasm (SIMD, `-Os`)          | 45.4 KB |      +11,133 bytes |
+| blake3_wasm_small (no SIMD, `-Os`) | 32.3 KB |       -1,390 bytes |
 | npm:blake3-wasm                    | 33.6 KB |           baseline |
 
-The ~15 KB size difference between blake3_wasm and blake3_wasm_small is the SIMD code:
+The ~13 KB size difference between blake3_wasm and blake3_wasm_small is the SIMD code:
 
 - **SIMD code**: ~10-12 KB — blake3's hand-written `wasm32_simd.rs` compression routines
-- **`-O3` vs `-Os`**: ~2-3 KB — aggressive inlining/unrolling for speed
-- **Miscellaneous**: ~1 KB
+- **Dead portable fallback**: ~3-5 KB — `portable::compress_in_place` survives LTO because blake3's
+  `Platform` enum is stored in the `Hasher` struct, preventing dead code elimination
+- Note: previously used `-O3` (46.8 KB) but switched to `-Os` after verifying SIMD hot path is
+  unaffected by opt-level
 
-blake3_wasm_small is 1,827 bytes smaller than the npm reference — effectively the same binary size.
+blake3_wasm_small is ~1.4 KB smaller than the npm reference — effectively the same binary size.
 
 Additional size optimizations applied:
 
@@ -393,7 +396,7 @@ Bun's WASM engine has poor SIMD performance — confirmed by blake3_wasm_small b
   partially offsets the overhead (see Q7 in benches/CLAUDE.md).
 - **Deno/Node.js**: blake3_wasm (SIMD) is ~2.6x _faster_ than blake3_wasm_small at 64KB+ inputs.
   At small inputs (32B, 1KB) the difference is ~1x on Deno; ~1.1-1.2x on Node.js.
-- **blake3_wasm_small** serves Bun users and bundle-size-sensitive contexts (31.8 KB vs 46.8 KB).
+- **blake3_wasm_small** serves Bun users and bundle-size-sensitive contexts (32.3 KB vs 45.4 KB).
 
 ## Publishing
 

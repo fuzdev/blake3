@@ -1,8 +1,8 @@
 {
 	"tasks": {
 		"build:wasm": "deno run --allow-read --allow-write --allow-run --allow-env scripts/build_wasm.ts",
-		"build:wasm:deno": "rm -rf crates/blake3_wasm/pkg/deno && RUSTFLAGS='-C opt-level=3 -C target-feature=+simd128' wasm-pack build crates/blake3_wasm --scope fuzdev --target deno --release --out-dir pkg/deno && deno run --allow-read --allow-write scripts/patch_deno_compile.ts crates/blake3_wasm/pkg/deno",
-		"build:wasm:web": "rm -rf crates/blake3_wasm/pkg/web && RUSTFLAGS='-C opt-level=3 -C target-feature=+simd128' wasm-pack build crates/blake3_wasm --scope fuzdev --target web --release --out-dir pkg/web && deno run --allow-read --allow-write scripts/patch_npm_package.ts crates/blake3_wasm/pkg/web",
+		"build:wasm:deno": "rm -rf crates/blake3_wasm/pkg/deno && RUSTFLAGS='-C opt-level=s -C target-feature=+simd128' wasm-pack build crates/blake3_wasm --scope fuzdev --target deno --release --out-dir pkg/deno && deno run --allow-read --allow-write scripts/patch_deno_compile.ts crates/blake3_wasm/pkg/deno",
+		"build:wasm:web": "rm -rf crates/blake3_wasm/pkg/web && RUSTFLAGS='-C opt-level=s -C target-feature=+simd128' wasm-pack build crates/blake3_wasm --scope fuzdev --target web --release --out-dir pkg/web && deno run --allow-read --allow-write scripts/patch_npm_package.ts crates/blake3_wasm/pkg/web",
 
 		"build:wasm:small": "deno task build:wasm:small:deno && deno task build:wasm:small:web",
 		"build:wasm:small:deno": "rm -rf crates/blake3_wasm_small/pkg/deno && RUSTFLAGS='-C opt-level=s' wasm-pack build crates/blake3_wasm_small --scope fuzdev --target deno --release --out-dir pkg/deno && deno run --allow-read --allow-write scripts/patch_deno_compile.ts crates/blake3_wasm_small/pkg/deno",

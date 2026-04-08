@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Own BLAKE3 WASM build from the `blake3` Rust crate, published as `@fuzdev/blake3_wasm` (SIMD, `-O3`, ~47 KB) for maximum throughput on Deno/Node.js and `@fuzdev/blake3_wasm_small` (no SIMD, `-Os`, ~32 KB) for Bun and bundle-size-sensitive contexts. Benchmark tooling compares against `npm:blake3-wasm`.
+Own BLAKE3 WASM build from the `blake3` Rust crate, published as `@fuzdev/blake3_wasm` (SIMD, `-Os`, ~45 KB) for maximum throughput on Deno/Node.js and `@fuzdev/blake3_wasm_small` (no SIMD, `-Os`, ~32 KB) for Bun and bundle-size-sensitive contexts. Benchmark tooling compares against `npm:blake3-wasm`.
 
 ## Crate Structure
 
@@ -52,7 +52,8 @@ Rust (blake3_wasm_core without simd)
     → pkg/component/blake3_component.wasm (WASI component)
 ```
 
-blake3_wasm/blake3_component: `RUSTFLAGS='-C opt-level=3 -C target-feature=+simd128'` and wasm-opt `-O3 --enable-simd --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers`.
+blake3_wasm: `RUSTFLAGS='-C opt-level=s -C target-feature=+simd128'` and wasm-opt `-Os --enable-simd --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers`.
+blake3_component: `RUSTFLAGS='-C opt-level=3 -C target-feature=+simd128'` and wasm-opt `-O3 --enable-simd --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers`.
 blake3_wasm_small: `RUSTFLAGS='-C opt-level=s'` (no SIMD flags) and wasm-opt `-Os --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers`.
 
 Note: wasm-pack doesn't support `--profile` (conflicts with `--release`), so RUSTFLAGS is the mechanism for overriding optimization level.

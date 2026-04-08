@@ -10,11 +10,11 @@ repository.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 # wasm-opt flags:
-#   -O3                              Speed-optimized post-processing
+#   -Os                              Size-optimized post-processing
 #   --enable-simd + friends          Enable WASM features used by blake3's wasm32_simd code
 #   --strip-producers                Remove compiler metadata custom section (~26 bytes)
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = ["-O3", "--enable-simd", "--enable-bulk-memory", "--enable-nontrapping-float-to-int", "--enable-mutable-globals", "--enable-sign-ext", "--strip-producers"]
+wasm-opt = ["-Os", "--enable-simd", "--enable-bulk-memory", "--enable-nontrapping-float-to-int", "--enable-mutable-globals", "--enable-sign-ext", "--strip-producers"]
 
 [dependencies]
 blake3_wasm_core = { path = "../blake3_wasm_core", features = ["simd"] }

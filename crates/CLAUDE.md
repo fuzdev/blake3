@@ -11,14 +11,15 @@ Also contains the shared TypeScript source: `types.ts` (Blake3HasherInstance int
 
 ## blake3_wasm
 
-WASM bindings via `wasm-bindgen`. Compiled with Rust `-O3` optimization, blake3's `wasm32_simd`
+WASM bindings via `wasm-bindgen`. Compiled with Rust `-Os` optimization, blake3's `wasm32_simd`
 feature (via blake3_wasm_core's `simd` feature) for hand-optimized WASM SIMD compression,
-and wasm-opt `-O3 --enable-simd --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers`.
+and wasm-opt `-Os --enable-simd --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers`.
 
-The build uses `RUSTFLAGS='-C opt-level=3 -C target-feature=+simd128'` to override the workspace
-release profile (`opt-level=s`). The `wasm32_simd` Cargo feature enables blake3's hand-written
-`wasm32_simd.rs` implementation (ported from SSE2), which is ~2x faster than the portable Rust
-code at medium/large inputs.
+The build uses `RUSTFLAGS='-C opt-level=s -C target-feature=+simd128'`. The SIMD compression code
+uses `#[inline(always)]` so opt-level doesn't affect the hot path — `-Os` only reduces the
+non-SIMD code (Merkle tree, buffer management). The `wasm32_simd` Cargo feature enables blake3's
+hand-written `wasm32_simd.rs` implementation (ported from SSE2), which is ~2x faster than the
+portable Rust code at medium/large inputs.
 
 **Source**: `pub use blake3_wasm_core::*;` — delegates to the shared core crate.
 
@@ -26,7 +27,7 @@ code at medium/large inputs.
 
 Size-optimized WASM bindings — identical API to blake3_wasm but without SIMD. Compiled with
 `RUSTFLAGS='-C opt-level=s'` (no `+simd128`) and wasm-opt `-Os --enable-bulk-memory --enable-nontrapping-float-to-int --enable-mutable-globals --enable-sign-ext --strip-producers`. Produces a ~32 KB binary vs
-~47 KB for the SIMD build. Depends on `blake3_wasm_core` without the `simd` feature, so blake3
+~45 KB for the SIMD build. Depends on `blake3_wasm_core` without the `simd` feature, so blake3
 uses its portable Rust compression code instead of hand-written SIMD.
 
 **Source**: `pub use blake3_wasm_core::*;` — delegates to the shared core crate.
