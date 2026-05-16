@@ -6,6 +6,7 @@
 	"type": "module",
 	"devDependencies": {
 		"@fuzdev/fuz_util": "^0.52.1",
+		"@types/node": "^24.10.1",
 		"blake3-wasm": "^2.1.5"
 	}
 }

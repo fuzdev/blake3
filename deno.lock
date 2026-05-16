@@ -19,6 +19,7 @@
     "packageJson": {
       "dependencies": [
         "npm:@fuzdev/fuz_util@~0.52.1",
+        "npm:@types/node@^24.10.1",
         "npm:blake3-wasm@^2.1.5"
       ]
     }

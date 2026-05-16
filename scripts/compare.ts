@@ -12,7 +12,7 @@
  *   --small   Test blake3_wasm_small instead of blake3_wasm
  */
 
-import { assertEquals, assertRejects, assertThrows } from 'jsr:@std/assert';
+import assert from 'node:assert/strict';
 
 const small_mode = Deno.args.includes('--small');
 const pkg_name = small_mode ? 'blake3_wasm_small' : 'blake3_wasm';
@@ -89,7 +89,7 @@ Deno.test(`${pkg_name}: one-shot hash`, async (t) => {
 		const input = hex_to_bytes(v.input_hex);
 
 		await t.step(`hash(${v.label})`, () => {
-			assertEquals(to_hex(hash(input)), v.hash);
+			assert.strictEqual(to_hex(hash(input)), v.hash);
 		});
 	}
 });
@@ -99,7 +99,7 @@ Deno.test(`${pkg_name}: keyed hash`, async (t) => {
 		await t.step(`keyed_hash(${v.label})`, () => {
 			const input = hex_to_bytes(v.input_hex);
 			const key = hex_to_bytes(v.keyed_hash_key_hex);
-			assertEquals(to_hex(keyed_hash(key, input)), v.keyed_hash);
+			assert.strictEqual(to_hex(keyed_hash(key, input)), v.keyed_hash);
 		});
 	}
 });
@@ -108,7 +108,7 @@ Deno.test(`${pkg_name}: derive key`, async (t) => {
 	for (const v of test_vectors) {
 		await t.step(`derive_key(${v.label})`, () => {
 			const input = hex_to_bytes(v.input_hex);
-			assertEquals(to_hex(derive_key(v.derive_key_context, input)), v.derive_key);
+			assert.strictEqual(to_hex(derive_key(v.derive_key_context, input)), v.derive_key);
 		});
 	}
 });
@@ -120,7 +120,7 @@ Deno.test(`${pkg_name}: streaming hasher`, async (t) => {
 			const input = hex_to_bytes(v.input_hex);
 			const h = new Blake3Hasher();
 			h.update(input);
-			assertEquals(to_hex(h.finalize()), v.hash);
+			assert.strictEqual(to_hex(h.finalize()), v.hash);
 			h.free();
 		});
 	}
@@ -132,7 +132,7 @@ Deno.test(`${pkg_name}: streaming hasher`, async (t) => {
 		const h = new Blake3Hasher();
 		h.update(encoder.encode('hel'));
 		h.update(encoder.encode('lo'));
-		assertEquals(to_hex(h.finalize()), expected);
+		assert.strictEqual(to_hex(h.finalize()), expected);
 		h.free();
 	});
 
@@ -144,7 +144,7 @@ Deno.test(`${pkg_name}: streaming hasher`, async (t) => {
 		for (const byte of hello) {
 			h.update(new Uint8Array([byte]));
 		}
-		assertEquals(to_hex(h.finalize()), expected);
+		assert.strictEqual(to_hex(h.finalize()), expected);
 		h.free();
 	});
 
@@ -156,7 +156,7 @@ Deno.test(`${pkg_name}: streaming hasher`, async (t) => {
 		h.update(encoder.encode('garbage'));
 		h.reset();
 		h.update(hello);
-		assertEquals(to_hex(h.finalize()), expected);
+		assert.strictEqual(to_hex(h.finalize()), expected);
 		h.free();
 	});
 
@@ -166,7 +166,7 @@ Deno.test(`${pkg_name}: streaming hasher`, async (t) => {
 		h.update(encoder.encode('hello'));
 		const first = to_hex(h.finalize());
 		const second = to_hex(h.finalize());
-		assertEquals(first, second);
+		assert.strictEqual(first, second);
 		h.free();
 	});
 
@@ -176,10 +176,10 @@ Deno.test(`${pkg_name}: streaming hasher`, async (t) => {
 		const hello_hash = to_hex(hash(hello));
 		const h = new Blake3Hasher();
 		h.update(hello);
-		assertEquals(to_hex(h.finalize_and_reset()), hello_hash);
+		assert.strictEqual(to_hex(h.finalize_and_reset()), hello_hash);
 		// After reset, hashing new data should produce fresh result
 		h.update(encoder.encode('world'));
-		assertEquals(to_hex(h.finalize()), to_hex(hash(encoder.encode('world'))));
+		assert.strictEqual(to_hex(h.finalize()), to_hex(hash(encoder.encode('world'))));
 		h.free();
 	});
 
@@ -189,11 +189,11 @@ Deno.test(`${pkg_name}: streaming hasher`, async (t) => {
 		const hello = encoder.encode('hello');
 		const h = Blake3Hasher.new_keyed(key);
 		h.update(hello);
-		assertEquals(to_hex(h.finalize_and_reset()), to_hex(keyed_hash(key, hello)));
+		assert.strictEqual(to_hex(h.finalize_and_reset()), to_hex(keyed_hash(key, hello)));
 		// After reset, keyed mode should be preserved
 		const world = encoder.encode('world');
 		h.update(world);
-		assertEquals(to_hex(h.finalize()), to_hex(keyed_hash(key, world)));
+		assert.strictEqual(to_hex(h.finalize()), to_hex(keyed_hash(key, world)));
 		h.free();
 	});
 
@@ -203,11 +203,11 @@ Deno.test(`${pkg_name}: streaming hasher`, async (t) => {
 		const hello = encoder.encode('hello');
 		const h = Blake3Hasher.new_derive_key(context);
 		h.update(hello);
-		assertEquals(to_hex(h.finalize_and_reset()), to_hex(derive_key(context, hello)));
+		assert.strictEqual(to_hex(h.finalize_and_reset()), to_hex(derive_key(context, hello)));
 		// After reset, derive-key mode should be preserved
 		const world = encoder.encode('world');
 		h.update(world);
-		assertEquals(to_hex(h.finalize()), to_hex(derive_key(context, world)));
+		assert.strictEqual(to_hex(h.finalize()), to_hex(derive_key(context, world)));
 		h.free();
 	});
 
@@ -217,7 +217,7 @@ Deno.test(`${pkg_name}: streaming hasher`, async (t) => {
 		const hello = encoder.encode('hello');
 		const h = Blake3Hasher.new_keyed(key);
 		h.update(hello);
-		assertEquals(to_hex(h.finalize()), to_hex(keyed_hash(key, hello)));
+		assert.strictEqual(to_hex(h.finalize()), to_hex(keyed_hash(key, hello)));
 		h.free();
 	});
 
@@ -227,7 +227,7 @@ Deno.test(`${pkg_name}: streaming hasher`, async (t) => {
 		const hello = encoder.encode('hello');
 		const h = Blake3Hasher.new_derive_key(context);
 		h.update(hello);
-		assertEquals(to_hex(h.finalize()), to_hex(derive_key(context, hello)));
+		assert.strictEqual(to_hex(h.finalize()), to_hex(derive_key(context, hello)));
 		h.free();
 	});
 });
@@ -237,7 +237,7 @@ Deno.test(`${pkg_name}: stream functions`, async (t) => {
 		await t.step(`hash_stream(${v.label})`, async () => {
 			const input = hex_to_bytes(v.input_hex);
 			const result = await hash_stream(make_stream(input));
-			assertEquals(to_hex(result), v.hash);
+			assert.strictEqual(to_hex(result), v.hash);
 		});
 	}
 
@@ -246,7 +246,7 @@ Deno.test(`${pkg_name}: stream functions`, async (t) => {
 			const input = hex_to_bytes(v.input_hex);
 			const key = hex_to_bytes(v.keyed_hash_key_hex);
 			const result = await keyed_hash_stream(key, make_stream(input));
-			assertEquals(to_hex(result), v.keyed_hash);
+			assert.strictEqual(to_hex(result), v.keyed_hash);
 		});
 	}
 
@@ -254,7 +254,7 @@ Deno.test(`${pkg_name}: stream functions`, async (t) => {
 		await t.step(`derive_key_stream(${v.label})`, async () => {
 			const input = hex_to_bytes(v.input_hex);
 			const result = await derive_key_stream(v.derive_key_context, make_stream(input));
-			assertEquals(to_hex(result), v.derive_key);
+			assert.strictEqual(to_hex(result), v.derive_key);
 		});
 	}
 
@@ -269,7 +269,7 @@ Deno.test(`${pkg_name}: stream functions`, async (t) => {
 				c.close();
 			},
 		});
-		assertEquals(to_hex(await hash_stream(stream)), expected);
+		assert.strictEqual(to_hex(await hash_stream(stream)), expected);
 	});
 
 	await t.step('hash_stream batch overflow boundary', async () => {
@@ -288,7 +288,7 @@ Deno.test(`${pkg_name}: stream functions`, async (t) => {
 				c.close();
 			},
 		});
-		assertEquals(to_hex(await hash_stream(stream)), expected);
+		assert.strictEqual(to_hex(await hash_stream(stream)), expected);
 	});
 
 	await t.step('hash_stream mixed chunk sizes (all code paths)', async () => {
@@ -313,7 +313,7 @@ Deno.test(`${pkg_name}: stream functions`, async (t) => {
 				controller.close();
 			},
 		});
-		assertEquals(to_hex(await hash_stream(stream)), expected);
+		assert.strictEqual(to_hex(await hash_stream(stream)), expected);
 	});
 
 	await t.step('hash_stream batching (many small chunks)', async () => {
@@ -328,40 +328,36 @@ Deno.test(`${pkg_name}: stream functions`, async (t) => {
 				controller.close();
 			},
 		});
-		assertEquals(to_hex(await hash_stream(stream)), expected);
+		assert.strictEqual(to_hex(await hash_stream(stream)), expected);
 	});
 });
 
 Deno.test(`${pkg_name}: error paths`, async (t) => {
 	await t.step('keyed_hash throws on 16-byte key', () => {
-		assertThrows(
+		assert.throws(
 			() => keyed_hash(new Uint8Array(16), new Uint8Array(0)),
-			Error,
-			'key must be exactly 32 bytes',
+			{message: /key must be exactly 32 bytes/},
 		);
 	});
 
 	await t.step('new_keyed throws on empty key', () => {
-		assertThrows(
+		assert.throws(
 			() => Blake3Hasher.new_keyed(new Uint8Array(0)),
-			Error,
-			'key must be exactly 32 bytes',
+			{message: /key must be exactly 32 bytes/},
 		);
 	});
 
 	await t.step('new_keyed throws on 16-byte key', () => {
-		assertThrows(
+		assert.throws(
 			() => Blake3Hasher.new_keyed(new Uint8Array(16)),
-			Error,
-			'key must be exactly 32 bytes',
+			{message: /key must be exactly 32 bytes/},
 		);
 	});
 
 	await t.step('keyed_hash_stream throws on 16-byte key', async () => {
-		await assertRejects(
+		await assert.rejects(
 			() => keyed_hash_stream(new Uint8Array(16), make_stream(new Uint8Array(0))),
-			Error,
-			'key must be exactly 32 bytes',
+			{message: /key must be exactly 32 bytes/},
 		);
 	});
 });
