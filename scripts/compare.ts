@@ -336,28 +336,28 @@ Deno.test(`${pkg_name}: error paths`, async (t) => {
 	await t.step('keyed_hash throws on 16-byte key', () => {
 		assert.throws(
 			() => keyed_hash(new Uint8Array(16), new Uint8Array(0)),
-			{message: /key must be exactly 32 bytes/},
+			{ message: /key must be exactly 32 bytes/ },
 		);
 	});
 
 	await t.step('new_keyed throws on empty key', () => {
 		assert.throws(
 			() => Blake3Hasher.new_keyed(new Uint8Array(0)),
-			{message: /key must be exactly 32 bytes/},
+			{ message: /key must be exactly 32 bytes/ },
 		);
 	});
 
 	await t.step('new_keyed throws on 16-byte key', () => {
 		assert.throws(
 			() => Blake3Hasher.new_keyed(new Uint8Array(16)),
-			{message: /key must be exactly 32 bytes/},
+			{ message: /key must be exactly 32 bytes/ },
 		);
 	});
 
 	await t.step('keyed_hash_stream throws on 16-byte key', async () => {
 		await assert.rejects(
 			() => keyed_hash_stream(new Uint8Array(16), make_stream(new Uint8Array(0))),
-			{message: /key must be exactly 32 bytes/},
+			{ message: /key must be exactly 32 bytes/ },
 		);
 	});
 });
