@@ -1,3 +1,7 @@
+# Local (per-machine, never shared)
+*.local
+*.local.*
+
 node_modules/
 
 # Rust build output
