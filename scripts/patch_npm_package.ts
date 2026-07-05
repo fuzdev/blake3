@@ -261,6 +261,11 @@ pkg.repository = {
 pkg.bugs = 'https://github.com/fuzdev/blake3/issues';
 pkg.funding = 'https://www.ryanatkn.com/funding';
 pkg.engines = { node: '>=20' };
+// wasm-pack emits `sideEffects: ["./snippets/*"]`, declaring index.js
+// side-effect-free — but its top-level readFileSync + initSync IS the side
+// effect. Without this, a tree-shaking bundler on the `node` condition may
+// bypass the re-export facade and skip initialization entirely.
+pkg.sideEffects = ['./index.js'];
 
 // Remove wasm-pack web target fields superseded by exports
 delete pkg.main;

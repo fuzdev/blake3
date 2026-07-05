@@ -433,13 +433,20 @@ Package exports include `"./package.json"` self-reference and `"."` with `"node"
 conditions so Node.js gets zero-config sync init and bundlers (Vite etc.) get the `browser.js`
 entry which works with `new URL(...)` WASM patterns natively.
 
+`package.json` is also given `sideEffects: ["./index.js"]`, overriding wasm-pack's default
+(`["./snippets/*"]`, which declares `index.js` side-effect-free). The Node entry's top-level
+`readFileSync` + `initSync` _is_ a side effect, so a tree-shaking bundler on the `node`
+condition must not drop it. `scripts/test_npm.js` asserts the field so it can't regress.
+
 ### Publish steps
 
 ```bash
 changeset                          # add a changeset (during development)
 deno task publish                  # dry-run: sync, check, build, validate (no version bump)
 deno task publish --wetrun         # changeset version + sync + check + build + validate + publish
-# git add . && git commit -m "vX.Y.Z" && git tag vX.Y.Z && git push && git push --tags
+# then run the finalize the script prints: a scoped `git add` of the release files
+# (package.json, CHANGELOG.md, Cargo.toml, Cargo.lock, both jsr.json, .changeset),
+# `git commit`, an annotated `git tag -m vX.Y.Z vX.Y.Z`, and `git push --follow-tags`
 ```
 
 `deno task publish` runs these steps (fail-fast):

@@ -43,6 +43,10 @@ const test_vectors = JSON.parse(
 
 const encoder = new TextEncoder();
 
+const pkg = JSON.parse(
+	readFileSync(new URL(`../${pkg_dir}/package.json`, import.meta.url), 'utf-8'),
+);
+
 /** @param {Uint8Array} bytes */
 function to_hex(bytes) {
 	return Array.from(bytes)
@@ -58,6 +62,18 @@ function hex_to_bytes(hex) {
 	}
 	return bytes;
 }
+
+describe(`package shape: ${pkg_dir}`, () => {
+	it('index.js is marked side-effectful (auto-init survives tree-shaking)', () => {
+		assert.deepEqual(pkg.sideEffects, ['./index.js']);
+	});
+
+	it('exports map: single `.` + package.json self-map; no main/types/module', () => {
+		assert.deepEqual(Object.keys(pkg.exports).sort(), ['.', './package.json']);
+		assert.deepEqual(Object.keys(pkg.exports['.']), ['types', 'node', 'default']);
+		assert.ok(!('main' in pkg) && !('types' in pkg) && !('module' in pkg));
+	});
+});
 
 describe(`npm package: ${pkg_dir}`, () => {
 	describe('one-shot hash', () => {

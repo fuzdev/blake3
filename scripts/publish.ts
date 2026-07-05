@@ -22,6 +22,18 @@ const web_packages = [
 	{ label: '@fuzdev/blake3_wasm_small', dir: 'crates/blake3_wasm_small/pkg/web' },
 ];
 
+/** The files a release mutates (changeset version + the version syncs). A scoped
+ * `git add` keeps stray working-tree changes out of the release commit. */
+const release_files = [
+	'package.json',
+	'CHANGELOG.md',
+	'Cargo.toml',
+	'Cargo.lock',
+	'crates/blake3_wasm/jsr.json',
+	'crates/blake3_wasm_small/jsr.json',
+	'.changeset',
+];
+
 console.log(`\n=== blake3 publish ${wetrun ? '(wetrun)' : '(dry-run)'} ===\n`);
 
 // Step 1: Preflight checks
@@ -36,6 +48,17 @@ if (!changeset_cli) {
 	Deno.exit(1);
 }
 console.log(`  changeset CLI: ${changeset_cli}`);
+
+// Branch check — releases publish from main (warn only; the git finalize is manual)
+const branch_result = new Deno.Command('git', {
+	args: ['branch', '--show-current'],
+	stdout: 'piped',
+	stderr: 'piped',
+}).outputSync();
+const branch = branch_result.success ? dec.decode(branch_result.stdout).trim() : '';
+if (branch && branch !== 'main') {
+	console.warn(`  WARN: on branch "${branch}" — releases publish from main`);
+}
 
 // Check for uncommitted changes — skip in wetrun retry mode (changeset version left changes behind)
 const initial_sentinel = read_sentinel();
@@ -307,22 +330,22 @@ if (wetrun) {
 	for (const { label } of web_packages) {
 		console.log(`  Published ${label}@${version} to npm`);
 	}
-	console.log('\n  Git commands to finalize the release:\n');
-	console.log(`    git add .`);
+	console.log('\n  Git commands to finalize the release (scoped add; annotated tag —');
+	console.log('  `git push --follow-tags` ignores lightweight tags):\n');
+	console.log(`    git add -- ${release_files.join(' ')}`);
 	console.log(`    git commit -m "v${version}"`);
-	console.log(`    git tag v${version}`);
-	console.log(`    git push`);
-	console.log(`    git push --tags`);
+	console.log(`    git tag -m v${version} v${version}`);
+	console.log('    git push --follow-tags');
 	console.log('');
 } else {
 	console.log(`  Dry-run complete for v${version} — all checks passed.`);
 	console.log('  Run with --wetrun to publish to npm.');
-	console.log('\n  After wetrun, finalize with:\n');
-	console.log('    git add .');
+	console.log('\n  After wetrun, finalize with (scoped add; annotated tag —');
+	console.log('  `git push --follow-tags` ignores lightweight tags):\n');
+	console.log(`    git add -- ${release_files.join(' ')}`);
 	console.log(`    git commit -m "v<new_version>"`);
-	console.log(`    git tag v<new_version>`);
-	console.log('    git push');
-	console.log('    git push --tags');
+	console.log(`    git tag -m v<new_version> v<new_version>`);
+	console.log('    git push --follow-tags');
 	console.log('');
 }
 
@@ -355,13 +378,23 @@ function find_changeset_cli(): string | null {
 	return null;
 }
 
+/**
+ * Whether `pkg_name@target_version` exists on the registry. Distinguishes
+ * "not published" (npm E404) from npm/network failure — the latter aborts,
+ * since no publish decision is safe without an answer.
+ */
 function is_published(pkg_name: string, target_version: string): boolean {
 	const result = new Deno.Command('npm', {
 		args: ['view', `${pkg_name}@${target_version}`, 'version'],
 		stdout: 'piped',
 		stderr: 'piped',
 	}).outputSync();
-	return result.success && dec.decode(result.stdout).trim() === target_version;
+	if (result.success) return dec.decode(result.stdout).trim() === target_version;
+	const stderr = dec.decode(result.stderr).trim();
+	if (stderr.includes('E404')) return false;
+	console.error(`  FAIL: npm view ${pkg_name}@${target_version} failed:`);
+	console.error(stderr);
+	Deno.exit(1);
 }
 
 function has_pending_changesets(): boolean {

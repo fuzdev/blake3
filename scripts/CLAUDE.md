@@ -13,10 +13,10 @@ are Deno TypeScript (except `test_npm.js` which runs in Node.js).
 
 ### Post-Build Patches
 
-| Script                  | Runs after                                 | Purpose                                                                                                                                                                                                |
-| ----------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `patch_deno_compile.ts` | `build:wasm:deno`, `build:wasm:small:deno` | Replaces wasm-bindgen's `fetch()` with `Deno.readFileSync()` for `deno compile` compat; creates `_bg.js` stub for module resolution                                                                    |
-| `patch_npm_package.ts`  | `build:wasm:web`, `build:wasm:small:web`   | Generates `stream.js` (from `blake3_wasm_core/stream.ts`), `index.js` (Node auto-init), `browser.js` (guarded exports), `index.d.ts`, npm README; patches `package.json` with metadata and exports map |
+| Script                  | Runs after                                 | Purpose                                                                                                                                                                                                                                                                                        |
+| ----------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `patch_deno_compile.ts` | `build:wasm:deno`, `build:wasm:small:deno` | Replaces wasm-bindgen's `fetch()` with `Deno.readFileSync()` for `deno compile` compat; creates `_bg.js` stub for module resolution                                                                                                                                                            |
+| `patch_npm_package.ts`  | `build:wasm:web`, `build:wasm:small:web`   | Generates `stream.js` (from `blake3_wasm_core/stream.ts`), `index.js` (Node auto-init), `browser.js` (guarded exports), `index.d.ts`, npm README; patches `package.json` with metadata, exports map, and `sideEffects: ['./index.js']` (protects the Node entry's auto-init from tree-shaking) |
 
 ### Correctness
 
