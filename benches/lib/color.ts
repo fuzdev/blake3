@@ -1,11 +1,11 @@
 /**
- * Configures `st` from `@fuzdev/fuz_util/print.js` with `node:util`'s `styleText`.
+ * Configures `st` from `@fuzdev/fuz_util/print.ts` with `node:util`'s `styleText`.
  *
  * Re-exports `st` for use across benchmark modules.
  */
 
 import { styleText } from 'node:util';
-import { configure_print_colors, st } from '@fuzdev/fuz_util/print.js';
+import { configure_print_colors, st } from '@fuzdev/fuz_util/print.ts';
 
 configure_print_colors(styleText);
 

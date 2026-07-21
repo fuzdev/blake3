@@ -20,3 +20,7 @@ node_modules/
 
 # Publish pipeline sentinel (marks an in-progress wetrun for retry detection)
 .changeset/.publish-in-progress
+
+# Local (per-machine, never shared)
+*.local
+*.local.*

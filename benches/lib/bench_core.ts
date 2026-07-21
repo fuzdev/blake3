@@ -8,10 +8,10 @@
 import { execSync } from 'node:child_process';
 import { mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { Benchmark } from '@fuzdev/fuz_util/benchmark.js';
-import { benchmark_format_markdown } from '@fuzdev/fuz_util/benchmark_format.js';
-import type { BenchmarkResult } from '@fuzdev/fuz_util/benchmark_types.js';
-import { time_format, time_unit_detect_best } from '@fuzdev/fuz_util/time.js';
+import { Benchmark } from '@fuzdev/fuz_util/benchmark.ts';
+import { benchmark_format_markdown } from '@fuzdev/fuz_util/benchmark_format.ts';
+import type { BenchmarkResult } from '@fuzdev/fuz_util/benchmark_types.ts';
+import { time_format, time_unit_detect_best } from '@fuzdev/fuz_util/time.ts';
 
 import { st } from './color.ts';
 

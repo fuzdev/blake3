@@ -13,7 +13,7 @@
 
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
-import { time_format, time_unit_detect_best } from '@fuzdev/fuz_util/time.js';
+import { time_format, time_unit_detect_best } from '@fuzdev/fuz_util/time.ts';
 
 import {
 	type BenchGroupResult,

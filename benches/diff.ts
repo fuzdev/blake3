@@ -15,8 +15,8 @@
 
 import { readdirSync, readFileSync } from 'node:fs';
 import process from 'node:process';
-import { benchmark_stats_compare } from '@fuzdev/fuz_util/benchmark_stats.js';
-import { time_format, time_unit_detect_best } from '@fuzdev/fuz_util/time.js';
+import { benchmark_stats_compare } from '@fuzdev/fuz_util/benchmark_stats.ts';
+import { time_format, time_unit_detect_best } from '@fuzdev/fuz_util/time.ts';
 
 import type { BenchGroupResult, BenchSuiteResult } from './lib/bench_core.ts';
 import { st } from './lib/color.ts';
