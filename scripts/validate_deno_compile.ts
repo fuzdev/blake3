@@ -19,7 +19,7 @@ const root = new URL('..', import.meta.url).pathname;
 
 const targets = [
 	{ label: 'blake3_wasm', pkg_dir: `${root}crates/blake3_wasm/pkg/deno` },
-	{ label: 'blake3_wasm_small', pkg_dir: `${root}crates/blake3_wasm_small/pkg/deno` },
+	{ label: 'blake3_wasm_small', pkg_dir: `${root}crates/blake3_wasm_small/pkg/deno` }
 ];
 
 let all_ok = true;
@@ -49,7 +49,7 @@ function test_compile(label: string, pkg_dir: string): boolean {
 	// Find the main JS file in pkg/deno/ (e.g. blake3_wasm.js)
 	const pkg_entries = [...Deno.readDirSync(pkg_dir)];
 	const main_js = pkg_entries.find(
-		(e) => e.isFile && e.name.endsWith('.js') && !e.name.includes('_bg'),
+		(e) => e.isFile && e.name.endsWith('.js') && !e.name.includes('_bg')
 	);
 	if (!main_js) {
 		console.log(`FAIL: no main JS file found in ${pkg_dir}`);
@@ -81,16 +81,9 @@ console.log('PASS: hash("hello") = ' + result);
 		console.log(`  Compiling ${tmp_script}...`);
 
 		const compile = new Deno.Command('deno', {
-			args: [
-				'compile',
-				'--allow-read',
-				`--include=${pkg_dir}`,
-				'--output',
-				tmp_binary,
-				tmp_script,
-			],
+			args: ['compile', '--allow-read', `--include=${pkg_dir}`, '--output', tmp_binary, tmp_script],
 			stdout: 'piped',
-			stderr: 'piped',
+			stderr: 'piped'
 		});
 
 		const compile_result = compile.outputSync();
@@ -107,7 +100,7 @@ console.log('PASS: hash("hello") = ' + result);
 
 			const run = new Deno.Command(tmp_binary, {
 				stdout: 'piped',
-				stderr: 'piped',
+				stderr: 'piped'
 			});
 
 			const run_result = run.outputSync();

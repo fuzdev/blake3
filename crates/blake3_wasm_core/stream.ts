@@ -11,16 +11,13 @@ export interface StreamFunctions {
 	/** Keyed hash a ReadableStream. Key must be exactly 32 bytes. */
 	keyed_hash_stream(key: Uint8Array, stream: ReadableStream<Uint8Array>): Promise<Uint8Array>;
 	/** Derive-key hash a ReadableStream. Returns 32 bytes. */
-	derive_key_stream(
-		context: string,
-		stream: ReadableStream<Uint8Array>,
-	): Promise<Uint8Array>;
+	derive_key_stream(context: string, stream: ReadableStream<Uint8Array>): Promise<Uint8Array>;
 }
 
 /** Read all chunks from a stream into a hasher using batched updates to reduce WASM boundary crossings. */
 async function hash_stream_core(
 	hasher: Blake3HasherInstance,
-	stream: ReadableStream<Uint8Array>,
+	stream: ReadableStream<Uint8Array>
 ): Promise<Uint8Array> {
 	const reader = stream.getReader();
 	let batch: Uint8Array | null = null;
@@ -55,7 +52,7 @@ async function hash_stream_core(
 /** Build stream convenience functions bound to a specific Blake3Hasher constructor. */
 export function make_stream_functions(
 	Hasher: Blake3HasherConstructor,
-	check?: () => void,
+	check?: () => void
 ): StreamFunctions {
 	return {
 		async hash_stream(stream) {
@@ -84,6 +81,6 @@ export function make_stream_functions(
 			} finally {
 				hasher.free();
 			}
-		},
+		}
 	};
 }

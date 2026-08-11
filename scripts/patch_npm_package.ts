@@ -34,7 +34,7 @@ const main_js = entries.find(
 		!e.name.includes('_bg') &&
 		e.name !== 'index.js' &&
 		e.name !== 'browser.js' &&
-		e.name !== 'stream.js',
+		e.name !== 'stream.js'
 );
 if (!main_js) {
 	console.error(`No main JS file found in ${dir}`);
@@ -81,7 +81,7 @@ const ts_patterns = [
 	/\w\?\s*:/,
 	/\w!\./,
 	/import type /,
-	/export interface /,
+	/export interface /
 ];
 for (const pattern of ts_patterns) {
 	if (pattern.test(stream_js)) {
@@ -224,8 +224,8 @@ pkg.exports = {
 	'.': {
 		types: './index.d.ts',
 		node: './index.js',
-		default: './browser.js',
-	},
+		default: './browser.js'
+	}
 };
 pkg.files = [
 	'index.js',
@@ -236,7 +236,7 @@ pkg.files = [
 	dts_file,
 	wasm_file,
 	'README.md',
-	'LICENSE',
+	'LICENSE'
 ];
 pkg.keywords = [
 	'blake3',
@@ -246,17 +246,17 @@ pkg.keywords = [
 	...(is_small ? ['size-optimized'] : ['simd']),
 	'streaming',
 	'keyed-hash',
-	'key-derivation',
+	'key-derivation'
 ];
 pkg.homepage = 'https://github.com/fuzdev/blake3';
 pkg.author = {
 	name: 'Ryan Atkinson',
 	email: 'mail@ryanatkn.com',
-	url: 'https://www.ryanatkn.com/',
+	url: 'https://www.ryanatkn.com/'
 };
 pkg.repository = {
 	type: 'git',
-	url: 'git+https://github.com/fuzdev/blake3.git',
+	url: 'git+https://github.com/fuzdev/blake3.git'
 };
 pkg.bugs = 'https://github.com/fuzdev/blake3/issues';
 pkg.funding = 'https://www.ryanatkn.com/funding';
@@ -288,9 +288,7 @@ if (architecture_idx === -1) {
 	Deno.exit(1);
 }
 
-let npm_body = readme_full
-	.slice(0, architecture_idx)
-	.replace('# blake3\n', `# ${pkg_name}\n`);
+let npm_body = readme_full.slice(0, architecture_idx).replace('# blake3\n', `# ${pkg_name}\n`);
 
 if (is_small) {
 	// Replace import paths and WASM filenames so examples match the installed package
@@ -301,11 +299,12 @@ if (is_small) {
 	// Remove bundler alias tip (not relevant when already using the small build)
 	npm_body = npm_body.replace(
 		/\nOnly import one[^\n]+\nTo swap builds[^\n]+\n\n```ts\n[\s\S]*?\n```\n/,
-		'',
+		''
 	);
 }
 
-const npm_readme = npm_body +
+const npm_readme =
+	npm_body +
 	`
 ## Benchmarks
 

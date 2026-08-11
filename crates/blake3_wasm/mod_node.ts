@@ -8,6 +8,5 @@ const wasm = readFileSync(new URL('./pkg/web/blake3_wasm_bg.wasm', import.meta.u
 initSync({ module: wasm });
 
 import { make_stream_functions } from './stream.ts';
-export const { hash_stream, keyed_hash_stream, derive_key_stream } = make_stream_functions(
-	Blake3Hasher,
-);
+export const { hash_stream, keyed_hash_stream, derive_key_stream } =
+	make_stream_functions(Blake3Hasher);

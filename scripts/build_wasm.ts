@@ -20,12 +20,12 @@ interface BuildGroup {
 const groups: BuildGroup[] = [
 	{
 		label: 'blake3_wasm (SIMD)',
-		tasks: ['build:wasm:deno', 'build:wasm:web'],
+		tasks: ['build:wasm:deno', 'build:wasm:web']
 	},
 	{
 		label: 'blake3_wasm_small (no SIMD)',
-		tasks: ['build:wasm:small:deno', 'build:wasm:small:web'],
-	},
+		tasks: ['build:wasm:small:deno', 'build:wasm:small:web']
+	}
 ];
 
 console.log(`Building ${groups.length} packages in parallel...\n`);
@@ -49,7 +49,7 @@ async function run_group(group: BuildGroup): Promise<{ ok: boolean; label: strin
 		const result = await new Deno.Command('deno', {
 			args: ['task', task],
 			stdout: 'piped',
-			stderr: 'piped',
+			stderr: 'piped'
 		}).output();
 		if (!result.success) {
 			const stderr = dec.decode(result.stderr);

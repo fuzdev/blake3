@@ -42,9 +42,9 @@ export const make_hasher = (Hasher: Blake3HasherLike): HasherModule => ({
 		return {
 			update: (data: Uint8Array) => h.update(data),
 			finalize: () => h.finalize(),
-			free: () => h.free(),
+			free: () => h.free()
 		};
-	},
+	}
 });
 
 /** A blake3 optimization profile to benchmark. */
@@ -56,14 +56,8 @@ export interface Blake3Profile {
 	Blake3Hasher: Blake3HasherLike;
 	wasm_path: string;
 	hash_stream?: (stream: ReadableStream<Uint8Array>) => Promise<Uint8Array>;
-	keyed_hash_stream?: (
-		key: Uint8Array,
-		stream: ReadableStream<Uint8Array>,
-	) => Promise<Uint8Array>;
-	derive_key_stream?: (
-		context: string,
-		stream: ReadableStream<Uint8Array>,
-	) => Promise<Uint8Array>;
+	keyed_hash_stream?: (key: Uint8Array, stream: ReadableStream<Uint8Array>) => Promise<Uint8Array>;
+	derive_key_stream?: (context: string, stream: ReadableStream<Uint8Array>) => Promise<Uint8Array>;
 }
 
 /** Shape of the npm:blake3-wasm module (works with both browser-async and CJS imports). */
@@ -81,7 +75,7 @@ export interface NpmBlake3Like {
 /** Build the standard runner array from blake3 profiles and the npm reference. */
 export const make_runners = (
 	profiles: Blake3Profile[],
-	npm: { module: NpmBlake3Like; wasm_path: string },
+	npm: { module: NpmBlake3Like; wasm_path: string }
 ): BenchRunner[] => [
 	...profiles.map((p) => ({
 		label: p.label,
@@ -94,7 +88,7 @@ export const make_runners = (
 		derive_key_stream: p.derive_key_stream,
 		wasm_file: { label: p.label, path: p.wasm_path },
 		verify_group: 'blake3',
-		category: 'blake3' as const,
+		category: 'blake3' as const
 	})),
 	{
 		label: 'npm:blake3-wasm',
@@ -108,14 +102,14 @@ export const make_runners = (
 				return {
 					update: (data: Uint8Array) => h.update(data),
 					finalize: () => h.digest(),
-					free: () => h.dispose(),
+					free: () => h.dispose()
 				};
-			},
+			}
 		},
 		wasm_file: { label: 'npm:blake3-wasm', path: npm.wasm_path },
 		verify_group: 'blake3',
-		category: 'reference' as const,
-	},
+		category: 'reference' as const
+	}
 ];
 
 /** A single hash implementation to benchmark. */
@@ -126,14 +120,8 @@ export interface BenchRunner {
 	derive_key?: (context: string, key_material: Uint8Array) => Uint8Array;
 	Hasher?: HasherModule;
 	hash_stream?: (stream: ReadableStream<Uint8Array>) => Promise<Uint8Array>;
-	keyed_hash_stream?: (
-		key: Uint8Array,
-		stream: ReadableStream<Uint8Array>,
-	) => Promise<Uint8Array>;
-	derive_key_stream?: (
-		context: string,
-		stream: ReadableStream<Uint8Array>,
-	) => Promise<Uint8Array>;
+	keyed_hash_stream?: (key: Uint8Array, stream: ReadableStream<Uint8Array>) => Promise<Uint8Array>;
+	derive_key_stream?: (context: string, stream: ReadableStream<Uint8Array>) => Promise<Uint8Array>;
 	wasm_file?: WasmFileInfo;
 	/** Runners in the same group are verified to produce identical output. */
 	verify_group?: string;
@@ -186,7 +174,7 @@ export interface BenchSuiteResult {
 /** Map Benchmark results to the serializable BenchGroupResult format. */
 function map_bench_results(
 	results: BenchmarkResult[],
-	categories: Map<string, BenchRunner['category']>,
+	categories: Map<string, BenchRunner['category']>
 ): BenchGroupResult['results'] {
 	return results.map((r) => ({
 		name: r.name,
@@ -203,8 +191,8 @@ function map_bench_results(
 			p95_ns: r.stats.p95_ns,
 			p99_ns: r.stats.p99_ns,
 			min_ns: r.stats.min_ns,
-			max_ns: r.stats.max_ns,
-		},
+			max_ns: r.stats.max_ns
+		}
 	}));
 }
 
@@ -236,7 +224,7 @@ export const SECTION_HEADERS: Record<BenchSection, string> = {
 	one_shot: 'One-shot functions',
 	streaming: 'Streaming (manual hasher loop)',
 	stream_fn: 'Stream convenience functions (ReadableStream)',
-	component: 'Component model',
+	component: 'Component model'
 };
 
 /** Determine which section a benchmark group belongs to. */
@@ -280,9 +268,8 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 	const { duration_ms, warmup_iterations, runners, runtime_label, output_json } = config;
 
 	// GC between benchmark groups to prevent GC pauses from landing inside measurements
-	const gc = config.gc_between_groups && typeof globalThis.gc === 'function'
-		? globalThis.gc
-		: undefined;
+	const gc =
+		config.gc_between_groups && typeof globalThis.gc === 'function' ? globalThis.gc : undefined;
 
 	console.log(st('bold', `BLAKE3 WASM Benchmark — ${runtime_label}`));
 	if (gc) console.log(st('dim', '(GC enabled between groups)'));
@@ -317,7 +304,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 			const actual = to_hex(group_runners[i].hash(verify_data));
 			if (actual !== ref_hash) {
 				throw new Error(
-					`hash mismatch in ${group_name}: ${group_runners[0].label} vs ${group_runners[i].label}`,
+					`hash mismatch in ${group_name}: ${group_runners[0].label} vs ${group_runners[i].label}`
 				);
 			}
 		}
@@ -332,7 +319,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 					throw new Error(
 						`keyed_hash mismatch in ${group_name}: ${keyed_runners[0].label} vs ${
 							keyed_runners[i].label
-						}`,
+						}`
 					);
 				}
 			}
@@ -348,16 +335,14 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 					throw new Error(
 						`derive_key mismatch in ${group_name}: ${derive_runners[0].label} vs ${
 							derive_runners[i].label
-						}`,
+						}`
 					);
 				}
 			}
 		}
 	}
 	if (verify_groups.size > 0) {
-		console.log(
-			st('green', 'All hash/keyed_hash/derive_key outputs match.') + '\n',
-		);
+		console.log(st('green', 'All hash/keyed_hash/derive_key outputs match.') + '\n');
 	}
 
 	// Benchmark data sizes
@@ -365,7 +350,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 		{ label: '32 B', data: new Uint8Array(32).fill(0xab) },
 		{ label: '1 KB', data: new Uint8Array(1024).fill(0xab) },
 		{ label: '64 KB', data: new Uint8Array(65536).fill(0xab) },
-		{ label: '1 MB', data: new Uint8Array(1048576).fill(0xab) },
+		{ label: '1 MB', data: new Uint8Array(1048576).fill(0xab) }
 	];
 
 	const all_results: BenchGroupResult[] = [];
@@ -378,7 +363,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 		const bench = new Benchmark({
 			duration_ms,
 			warmup_iterations,
-			min_iterations: 3,
+			min_iterations: 3
 		});
 
 		for (const runner of runners) {
@@ -391,7 +376,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 		all_results.push({
 			name: group_name,
 			data_bytes: data.length,
-			results: map_bench_results(results, runner_categories),
+			results: map_bench_results(results, runner_categories)
 		});
 		all_full_results.push({ name: group_name, results });
 
@@ -411,13 +396,13 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 		{
 			name: 'keyed_hash',
 			filter: (r) => r.keyed_hash != null,
-			make_task: (r, data) => () => r.keyed_hash!(bench_key, data),
+			make_task: (r, data) => () => r.keyed_hash!(bench_key, data)
 		},
 		{
 			name: 'derive_key',
 			filter: (r) => r.derive_key != null,
-			make_task: (r, data) => () => r.derive_key!(bench_context, data),
-		},
+			make_task: (r, data) => () => r.derive_key!(bench_context, data)
+		}
 	];
 
 	for (const { name, filter, make_task } of keyed_derive_defs) {
@@ -430,7 +415,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 			const bench = new Benchmark({
 				duration_ms,
 				warmup_iterations,
-				min_iterations: 3,
+				min_iterations: 3
 			});
 
 			for (const runner of eligible) {
@@ -443,7 +428,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 			all_results.push({
 				name: group_name,
 				data_bytes: data.length,
-				results: map_bench_results(results, runner_categories),
+				results: map_bench_results(results, runner_categories)
 			});
 			all_full_results.push({ name: group_name, results });
 
@@ -455,7 +440,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 	const streaming_sizes = [
 		{ label: '1 KB', bytes: 1024, chunk_size: 64 },
 		{ label: '64 KB', bytes: 65536, chunk_size: 8192 },
-		{ label: '1 MB', bytes: 1048576, chunk_size: 8192 },
+		{ label: '1 MB', bytes: 1048576, chunk_size: 8192 }
 	];
 	const streaming_buf = new Uint8Array(1048576).fill(0xab);
 
@@ -466,14 +451,14 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 			console.log(
 				`--- streaming (${label}, ${
 					chunk_size >= 1024 ? chunk_size / 1024 + ' KB' : chunk_size + ' B'
-				} chunks) ---`,
+				} chunks) ---`
 			);
 			const chunks = make_chunks(streaming_buf, bytes, chunk_size);
 
 			const bench = new Benchmark({
 				duration_ms,
 				warmup_iterations,
-				min_iterations: 3,
+				min_iterations: 3
 			});
 
 			for (const runner of streamable) {
@@ -493,7 +478,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 			all_results.push({
 				name: group_name,
 				data_bytes: bytes,
-				results: map_bench_results(results, runner_categories),
+				results: map_bench_results(results, runner_categories)
 			});
 			all_full_results.push({ name: group_name, results });
 
@@ -509,7 +494,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 				start(controller) {
 					for (const c of chunks) controller.enqueue(c);
 					controller.close();
-				},
+				}
 			});
 
 		// Pre-warm the async stream path before measuring. On Bun, the first async benchmark
@@ -518,9 +503,8 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 		// ensures correctness on all runtimes (adds ~duration_ms, ~3% overhead per runtime).
 		const warmup_chunks = make_chunks(streaming_buf, 1024, 64);
 		const warmup_bench = new Benchmark({ duration_ms, warmup_iterations, min_iterations: 3 });
-		warmup_bench.add(
-			'_warmup',
-			() => stream_fn_runners[0].hash_stream!(make_stream(warmup_chunks)),
+		warmup_bench.add('_warmup', () =>
+			stream_fn_runners[0].hash_stream!(make_stream(warmup_chunks))
 		);
 		await warmup_bench.run();
 
@@ -532,18 +516,18 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 			{
 				name: 'hash_stream',
 				eligible: stream_fn_runners.filter((r) => r.hash_stream != null),
-				make_task: (r, chunks) => () => r.hash_stream!(make_stream(chunks)),
+				make_task: (r, chunks) => () => r.hash_stream!(make_stream(chunks))
 			},
 			{
 				name: 'keyed_hash_stream',
 				eligible: stream_fn_runners.filter((r) => r.keyed_hash_stream != null),
-				make_task: (r, chunks) => () => r.keyed_hash_stream!(bench_key, make_stream(chunks)),
+				make_task: (r, chunks) => () => r.keyed_hash_stream!(bench_key, make_stream(chunks))
 			},
 			{
 				name: 'derive_key_stream',
 				eligible: stream_fn_runners.filter((r) => r.derive_key_stream != null),
-				make_task: (r, chunks) => () => r.derive_key_stream!(bench_context, make_stream(chunks)),
-			},
+				make_task: (r, chunks) => () => r.derive_key_stream!(bench_context, make_stream(chunks))
+			}
 		];
 
 		for (const { label, bytes, chunk_size } of streaming_sizes) {
@@ -556,7 +540,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 				const bench = new Benchmark({
 					duration_ms,
 					warmup_iterations,
-					min_iterations: 3,
+					min_iterations: 3
 				});
 				for (const runner of eligible) {
 					bench.add(runner.label, make_task(runner, chunks));
@@ -567,7 +551,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 				all_results.push({
 					name: group_name,
 					data_bytes: bytes,
-					results: map_bench_results(results, runner_categories),
+					results: map_bench_results(results, runner_categories)
 				});
 				all_full_results.push({ name: group_name, results });
 				console.log();
@@ -650,14 +634,12 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 
 			if (throughput) {
 				console.log(
-					`  ${result.name.padEnd(28)} ${throughput.padStart(12)}  ${
-						time.padStart(12)
-					}${ci_str}${ratio_str}`,
+					`  ${result.name.padEnd(28)} ${throughput.padStart(12)}  ${time.padStart(
+						12
+					)}${ci_str}${ratio_str}`
 				);
 			} else {
-				console.log(
-					`  ${result.name.padEnd(28)} ${time.padStart(12)}${ci_str}${ratio_str}`,
-				);
+				console.log(`  ${result.name.padEnd(28)} ${time.padStart(12)}${ci_str}${ratio_str}`);
 			}
 		}
 		console.log();
@@ -696,7 +678,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 				}
 			}
 			console.log(
-				`  ${label.padEnd(max_label)}  ${String(bytes).padStart(8)} bytes  (${kb} KB)${delta}`,
+				`  ${label.padEnd(max_label)}  ${String(bytes).padStart(8)} bytes  (${kb} KB)${delta}`
 			);
 		}
 	}
@@ -706,14 +688,14 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 	if (ref_label === 'npm:blake3-wasm') {
 		notes.push(
 			`  ${ref_label} keyed_hash/derive_key use the streaming API internally (3 wasm calls)`,
-			'  vs our keyed_hash/derive_key one-shot wasm exports (1 call), explaining the large gap at small sizes.',
+			'  vs our keyed_hash/derive_key one-shot wasm exports (1 call), explaining the large gap at small sizes.'
 		);
 	}
 	if (stream_fn_runners.length > 0) {
 		notes.push(
 			'  Stream functions (hash_stream, etc.) include ReadableStream + async reader.read()',
 			'  overhead per iteration. Compare with "streaming" (sync hasher loop) for raw hash speed.',
-			'  Deno has ~3x higher per-read() overhead than Node.js, dominating stream results at small sizes.',
+			'  Deno has ~3x higher per-read() overhead than Node.js, dominating stream results at small sizes.'
 		);
 	}
 	if (notes.length > 0) {
@@ -737,7 +719,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 		timestamp,
 		groups: all_results,
 		wasm_sizes,
-		runner_categories: categories_record,
+		runner_categories: categories_record
 	};
 
 	// Write results if output path is configured

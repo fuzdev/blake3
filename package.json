@@ -1,12 +1,12 @@
 {
-	"name": "@fuzdev/blake3",
-	"description": "BLAKE3 hashing compiled to WASM",
-	"version": "0.1.1",
-	"private": true,
-	"type": "module",
-	"devDependencies": {
-		"@fuzdev/fuz_util": "^0.52.1",
-		"@types/node": "^24.10.1",
-		"blake3-wasm": "^2.1.5"
-	}
+  "name": "@fuzdev/blake3",
+  "description": "BLAKE3 hashing compiled to WASM",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@fuzdev/fuz_util": "^0.65.2",
+    "@types/node": "^24.10.1",
+    "blake3-wasm": "^2.1.5"
+  }
 }

@@ -22,7 +22,7 @@ import {
 	hash,
 	hash_stream,
 	keyed_hash,
-	keyed_hash_stream,
+	keyed_hash_stream
 } from '../../crates/blake3_wasm/mod_node.ts';
 import {
 	Blake3Hasher as Blake3HasherSmall,
@@ -31,7 +31,7 @@ import {
 	hash as hash_small,
 	hash_stream as hash_stream_small,
 	keyed_hash as keyed_hash_small,
-	keyed_hash_stream as keyed_hash_stream_small,
+	keyed_hash_stream as keyed_hash_stream_small
 } from '../../crates/blake3_wasm_small/mod_node.ts';
 import blake3_npm from 'blake3-wasm';
 import { make_runners, run_benchmarks } from '../lib/bench_core.ts';
@@ -52,7 +52,7 @@ const runners = make_runners(
 			hash_stream,
 			keyed_hash_stream,
 			derive_key_stream,
-			wasm_path: 'crates/blake3_wasm/pkg/web/blake3_wasm_bg.wasm',
+			wasm_path: 'crates/blake3_wasm/pkg/web/blake3_wasm_bg.wasm'
 		},
 		{
 			label: 'blake3_wasm_small',
@@ -63,10 +63,10 @@ const runners = make_runners(
 			hash_stream: hash_stream_small,
 			keyed_hash_stream: keyed_hash_stream_small,
 			derive_key_stream: derive_key_stream_small,
-			wasm_path: 'crates/blake3_wasm_small/pkg/web/blake3_wasm_small_bg.wasm',
-		},
+			wasm_path: 'crates/blake3_wasm_small/pkg/web/blake3_wasm_small_bg.wasm'
+		}
 	],
-	{ module: blake3_npm, wasm_path: 'node_modules/blake3-wasm/dist/wasm/nodejs/blake3_js_bg.wasm' },
+	{ module: blake3_npm, wasm_path: 'node_modules/blake3-wasm/dist/wasm/nodejs/blake3_js_bg.wasm' }
 );
 
 await run_benchmarks({
@@ -75,5 +75,5 @@ await run_benchmarks({
 	runners,
 	runtime_label,
 	output_json,
-	gc_between_groups: true,
+	gc_between_groups: true
 });

@@ -33,18 +33,18 @@ const {
 	derive_key,
 	hash_stream,
 	keyed_hash_stream,
-	derive_key_stream,
+	derive_key_stream
 } = await import(`../${pkg_dir}/index.js`);
 
 /** @type {Array<{label: string, input_hex: string, hash: string, keyed_hash: string, keyed_hash_key_hex: string, derive_key: string, derive_key_context: string}>} */
 const test_vectors = JSON.parse(
-	readFileSync(new URL('../test/test_vectors.json', import.meta.url), 'utf-8'),
+	readFileSync(new URL('../test/test_vectors.json', import.meta.url), 'utf-8')
 );
 
 const encoder = new TextEncoder();
 
 const pkg = JSON.parse(
-	readFileSync(new URL(`../${pkg_dir}/package.json`, import.meta.url), 'utf-8'),
+	readFileSync(new URL(`../${pkg_dir}/package.json`, import.meta.url), 'utf-8')
 );
 
 /** @param {Uint8Array} bytes */
@@ -98,7 +98,7 @@ describe(`npm package: ${pkg_dir}`, () => {
 			it(`derive_key(${v.label})`, () => {
 				assert.equal(
 					to_hex(derive_key(v.derive_key_context, hex_to_bytes(v.input_hex))),
-					v.derive_key,
+					v.derive_key
 				);
 			});
 		}
@@ -220,7 +220,7 @@ describe(`npm package: ${pkg_dir}`, () => {
 				if (mid > 0) controller.enqueue(data.subarray(0, mid));
 				if (mid < data.length) controller.enqueue(data.subarray(mid));
 				controller.close();
-			},
+			}
 		});
 	}
 
@@ -260,7 +260,7 @@ describe(`npm package: ${pkg_dir}`, () => {
 				start(controller) {
 					for (let i = 0; i < 128; i++) controller.enqueue(chunk.slice());
 					controller.close();
-				},
+				}
 			});
 			const result = await hash_stream(stream);
 			assert.equal(to_hex(result), expected);
@@ -274,7 +274,7 @@ describe(`npm package: ${pkg_dir}`, () => {
 				start(c) {
 					c.enqueue(chunk);
 					c.close();
-				},
+				}
 			});
 			assert.equal(to_hex(await hash_stream(stream)), expected);
 		});
@@ -293,7 +293,7 @@ describe(`npm package: ${pkg_dir}`, () => {
 					for (const chunk of small_chunks) c.enqueue(chunk);
 					c.enqueue(overflow_chunk);
 					c.close();
-				},
+				}
 			});
 			assert.equal(to_hex(await hash_stream(stream)), expected);
 		});
@@ -304,7 +304,7 @@ describe(`npm package: ${pkg_dir}`, () => {
 				new Uint8Array(16384).fill(0x02), // path 1: >= BATCH_SIZE, flush + direct
 				new Uint8Array(8192).fill(0x03), // path 3: accumulate
 				new Uint8Array(9000).fill(0x04), // path 2: 8192+9000 > 16384, overflow
-				new Uint8Array(50).fill(0x05), // path 3: small, accumulate (leftover)
+				new Uint8Array(50).fill(0x05) // path 3: small, accumulate (leftover)
 			];
 			const total = chunks.reduce((a, c) => a + c.length, 0);
 			const full = new Uint8Array(total);
@@ -318,7 +318,7 @@ describe(`npm package: ${pkg_dir}`, () => {
 				start(controller) {
 					for (const c of chunks) controller.enqueue(c);
 					controller.close();
-				},
+				}
 			});
 			assert.equal(to_hex(await hash_stream(stream)), expected);
 		});
@@ -326,7 +326,7 @@ describe(`npm package: ${pkg_dir}`, () => {
 		it('keyed_hash_stream throws on invalid key', async () => {
 			await assert.rejects(
 				() => keyed_hash_stream(new Uint8Array(16), make_stream(new Uint8Array(0))),
-				{ message: /key must be exactly 32 bytes/ },
+				{ message: /key must be exactly 32 bytes/ }
 			);
 		});
 	});
@@ -341,24 +341,21 @@ describe(`npm package: ${pkg_dir}`, () => {
 
 	describe('error paths', () => {
 		it('keyed_hash throws on 16-byte key', () => {
-			assert.throws(
-				() => keyed_hash(new Uint8Array(16), new Uint8Array(0)),
-				{ message: /key must be exactly 32 bytes/ },
-			);
+			assert.throws(() => keyed_hash(new Uint8Array(16), new Uint8Array(0)), {
+				message: /key must be exactly 32 bytes/
+			});
 		});
 
 		it('new_keyed throws on empty key', () => {
-			assert.throws(
-				() => Blake3Hasher.new_keyed(new Uint8Array(0)),
-				{ message: /key must be exactly 32 bytes/ },
-			);
+			assert.throws(() => Blake3Hasher.new_keyed(new Uint8Array(0)), {
+				message: /key must be exactly 32 bytes/
+			});
 		});
 
 		it('new_keyed throws on 16-byte key', () => {
-			assert.throws(
-				() => Blake3Hasher.new_keyed(new Uint8Array(16)),
-				{ message: /key must be exactly 32 bytes/ },
-			);
+			assert.throws(() => Blake3Hasher.new_keyed(new Uint8Array(16)), {
+				message: /key must be exactly 32 bytes/
+			});
 		});
 	});
 });
@@ -384,26 +381,21 @@ describe(`browser entry: ${pkg_dir}`, () => {
 	});
 
 	it('Blake3Hasher.new_keyed() throws before init', () => {
-		assert.throws(
-			() => browser.Blake3Hasher.new_keyed(new Uint8Array(32)),
-			/WASM not initialized/,
-		);
+		assert.throws(() => browser.Blake3Hasher.new_keyed(new Uint8Array(32)), /WASM not initialized/);
 	});
 
 	it('hash_stream throws before init', async () => {
 		const stream = new ReadableStream({
 			start(c) {
 				c.close();
-			},
+			}
 		});
 		await assert.rejects(() => browser.hash_stream(stream), /WASM not initialized/);
 	});
 
 	it('init_sync initializes WASM', () => {
 		const base = pkg_dir.includes('small') ? 'blake3_wasm_small' : 'blake3_wasm';
-		const wasm = readFileSync(
-			new URL(`../${pkg_dir}/${base}_bg.wasm`, import.meta.url),
-		);
+		const wasm = readFileSync(new URL(`../${pkg_dir}/${base}_bg.wasm`, import.meta.url));
 		browser.init_sync({ module: wasm });
 	});
 
@@ -448,7 +440,7 @@ describe(`browser entry: ${pkg_dir}`, () => {
 			start(c) {
 				c.enqueue(hello);
 				c.close();
-			},
+			}
 		});
 		const result = await browser.hash_stream(stream);
 		assert.equal(to_hex(result), to_hex(hash(hello)));
@@ -460,7 +452,7 @@ describe(`browser entry: ${pkg_dir}`, () => {
 		// Still works after redundant call
 		assert.equal(
 			to_hex(browser.hash(encoder.encode('hello'))),
-			to_hex(hash(encoder.encode('hello'))),
+			to_hex(hash(encoder.encode('hello')))
 		);
 	});
 });

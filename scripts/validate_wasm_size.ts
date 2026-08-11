@@ -64,29 +64,29 @@ const size_checks: SizeCheck[] = [
 		glob_dir: 'crates/blake3_wasm/pkg/deno',
 		suffix: '_bg.wasm',
 		min_bytes: 40_000,
-		max_bytes: 60_000,
+		max_bytes: 60_000
 	},
 	{
 		label: 'blake3_wasm web',
 		glob_dir: 'crates/blake3_wasm/pkg/web',
 		suffix: '_bg.wasm',
 		min_bytes: 40_000,
-		max_bytes: 60_000,
+		max_bytes: 60_000
 	},
 	{
 		label: 'blake3_wasm_small deno',
 		glob_dir: 'crates/blake3_wasm_small/pkg/deno',
 		suffix: '_bg.wasm',
 		min_bytes: 25_000,
-		max_bytes: 45_000,
+		max_bytes: 45_000
 	},
 	{
 		label: 'blake3_wasm_small web',
 		glob_dir: 'crates/blake3_wasm_small/pkg/web',
 		suffix: '_bg.wasm',
 		min_bytes: 25_000,
-		max_bytes: 45_000,
-	},
+		max_bytes: 45_000
+	}
 ];
 
 const root = new URL('..', import.meta.url).pathname;
@@ -157,7 +157,7 @@ if (exists(simd_deno) && exists(small_deno)) {
 
 const web_builds = [
 	{ label: 'blake3_wasm', dir: 'crates/blake3_wasm/pkg/web' },
-	{ label: 'blake3_wasm_small', dir: 'crates/blake3_wasm_small/pkg/web' },
+	{ label: 'blake3_wasm_small', dir: 'crates/blake3_wasm_small/pkg/web' }
 ];
 
 const required_files = [
@@ -167,7 +167,7 @@ const required_files = [
 	'index.d.ts',
 	'package.json',
 	'README.md',
-	'LICENSE',
+	'LICENSE'
 ];
 
 for (const build of web_builds) {

@@ -19,7 +19,7 @@ const dec = new TextDecoder();
 
 const web_packages = [
 	{ label: '@fuzdev/blake3_wasm', dir: 'crates/blake3_wasm/pkg/web' },
-	{ label: '@fuzdev/blake3_wasm_small', dir: 'crates/blake3_wasm_small/pkg/web' },
+	{ label: '@fuzdev/blake3_wasm_small', dir: 'crates/blake3_wasm_small/pkg/web' }
 ];
 
 /** The files a release mutates (changeset version + the version syncs). A scoped
@@ -31,7 +31,7 @@ const release_files = [
 	'Cargo.lock',
 	'crates/blake3_wasm/jsr.json',
 	'crates/blake3_wasm_small/jsr.json',
-	'.changeset',
+	'.changeset'
 ];
 
 console.log(`\n=== blake3 publish ${wetrun ? '(wetrun)' : '(dry-run)'} ===\n`);
@@ -53,7 +53,7 @@ console.log(`  changeset CLI: ${changeset_cli}`);
 const branch_result = new Deno.Command('git', {
 	args: ['branch', '--show-current'],
 	stdout: 'piped',
-	stderr: 'piped',
+	stderr: 'piped'
 }).outputSync();
 const branch = branch_result.success ? dec.decode(branch_result.stdout).trim() : '';
 if (branch && branch !== 'main') {
@@ -73,7 +73,7 @@ if (retry_mode) {
 	const git_status = new Deno.Command('git', {
 		args: ['status', '--porcelain'],
 		stdout: 'piped',
-		stderr: 'piped',
+		stderr: 'piped'
 	}).outputSync();
 	if (!git_status.success) {
 		console.error('  FAIL: git status failed — is this a git repository?');
@@ -98,7 +98,7 @@ if (wetrun) {
 	const whoami = new Deno.Command('npm', {
 		args: ['whoami'],
 		stdout: 'piped',
-		stderr: 'piped',
+		stderr: 'piped'
 	}).outputSync();
 	if (whoami.success) {
 		const user = dec.decode(whoami.stdout).trim();
@@ -132,11 +132,9 @@ if (wetrun) {
 			version = pkg_after.version;
 			if (version === version_before) {
 				console.error(`  FAIL: version unchanged at ${version} after changeset version`);
+				console.error('  Changesets were found but none bumped the root package (@fuzdev/blake3).');
 				console.error(
-					'  Changesets were found but none bumped the root package (@fuzdev/blake3).',
-				);
-				console.error(
-					'  Check that your .changeset/*.md files reference the correct package name.',
+					'  Check that your .changeset/*.md files reference the correct package name.'
 				);
 				Deno.exit(1);
 			}
@@ -147,7 +145,7 @@ if (wetrun) {
 		} else {
 			console.error('  FAIL: no pending changesets and no retry sentinel');
 			console.error(
-				'  A previous wetrun likely consumed the changesets before the sentinel was written.',
+				'  A previous wetrun likely consumed the changesets before the sentinel was written.'
 			);
 			console.error(`  package.json is at v${version_before}. To resume from this version:`);
 			console.error(`    echo "${version_before}" > ${SENTINEL_PATH}`);
@@ -205,10 +203,7 @@ if (wetrun) {
 	}
 }
 
-const jsr_paths = [
-	'crates/blake3_wasm/jsr.json',
-	'crates/blake3_wasm_small/jsr.json',
-];
+const jsr_paths = ['crates/blake3_wasm/jsr.json', 'crates/blake3_wasm_small/jsr.json'];
 for (const jsr_path of jsr_paths) {
 	const jsr_text = Deno.readTextFileSync(jsr_path);
 	const jsr = JSON.parse(jsr_text);
@@ -277,7 +272,7 @@ run('test:deno:small (blake3_wasm_small)', 'deno', [
 	'--allow-read',
 	'scripts/compare.ts',
 	'--',
-	'--small',
+	'--small'
 ]);
 run('deno task validate:compile', 'deno', ['task', 'validate:compile']);
 
@@ -297,10 +292,9 @@ for (let i = 0; i < web_packages.length; i++) {
 		}
 		console.log(`  Publishing ${label}...`);
 		const not_published = web_packages.slice(i);
-		const fail_hint =
-			`  Packages not published — re-run \`deno task publish --wetrun\` to retry, or publish manually:\n${
-				not_published.map((p) => `    cd ${p.dir} && npm publish --access public`).join('\n')
-			}`;
+		const fail_hint = `  Packages not published — re-run \`deno task publish --wetrun\` to retry, or publish manually:\n${not_published
+			.map((p) => `    cd ${p.dir} && npm publish --access public`)
+			.join('\n')}`;
 		run(`npm publish ${label}`, 'npm', ['publish', '--access', 'public'], dir, fail_hint);
 		console.log(`  Published ${label}@${version}`);
 	} else {
@@ -309,7 +303,7 @@ for (let i = 0; i < web_packages.length; i++) {
 			`npm publish --dry-run ${label}`,
 			'npm',
 			['publish', '--dry-run', '--access', 'public'],
-			dir,
+			dir
 		);
 	}
 }
@@ -357,7 +351,7 @@ function run(label: string, cmd: string, args: string[], cwd?: string, fail_hint
 		cwd,
 		stdin: 'inherit',
 		stdout: 'inherit',
-		stderr: 'inherit',
+		stderr: 'inherit'
 	}).outputSync();
 	if (!result.success) {
 		console.error(`\n  FAIL: ${label} (exit code ${result.code})`);
@@ -370,7 +364,7 @@ function find_changeset_cli(): string | null {
 	const result = new Deno.Command('sh', {
 		args: ['-c', 'command -v changeset'],
 		stdout: 'piped',
-		stderr: 'piped',
+		stderr: 'piped'
 	}).outputSync();
 	if (result.success) {
 		return dec.decode(result.stdout).trim();
@@ -387,7 +381,7 @@ function is_published(pkg_name: string, target_version: string): boolean {
 	const result = new Deno.Command('npm', {
 		args: ['view', `${pkg_name}@${target_version}`, 'version'],
 		stdout: 'piped',
-		stderr: 'piped',
+		stderr: 'piped'
 	}).outputSync();
 	if (result.success) return dec.decode(result.stdout).trim() === target_version;
 	const stderr = dec.decode(result.stderr).trim();

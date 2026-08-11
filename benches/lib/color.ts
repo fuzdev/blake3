@@ -18,7 +18,7 @@ const RUNTIME_FORMATS: Record<string, Format> = {
 	Bun: 'yellow',
 	Deno: 'cyan',
 	'Node.js': 'green',
-	Wasmtime: 'magenta',
+	Wasmtime: 'magenta'
 };
 
 const FALLBACK: Format[] = ['cyan', 'green', 'yellow', 'magenta'];

@@ -26,7 +26,7 @@ const STATS_NUMBER_FIELDS = [
 	'p95_ns',
 	'p99_ns',
 	'min_ns',
-	'max_ns',
+	'max_ns'
 ] as const;
 
 /** Optional stats fields (fuz_util Benchmark outputs these, Wasmtime doesn't). */
@@ -35,7 +35,7 @@ const OPTIONAL_STATS_FIELDS = [
 	'outliers_ns',
 	'outlier_ratio',
 	'raw_sample_size',
-	'failed_iterations',
+	'failed_iterations'
 ] as const;
 
 const results_dir = new URL('../benches/results/', import.meta.url);
@@ -145,7 +145,7 @@ for (const file of files) {
 					fail(
 						file,
 						`${rp}.category`,
-						`expected 'blake3'|'reference'|'baseline', got '${result.category}'`,
+						`expected 'blake3'|'reference'|'baseline', got '${result.category}'`
 					);
 					file_ok = false;
 				}
@@ -160,7 +160,7 @@ for (const file of files) {
 						fail(
 							file,
 							`${rp}.stats.${field}`,
-							`expected number, got ${typeof result.stats[field]}`,
+							`expected number, got ${typeof result.stats[field]}`
 						);
 						file_ok = false;
 					}
@@ -177,7 +177,7 @@ for (const file of files) {
 					fail(
 						file,
 						`${rp}.stats.confidence_interval_ns`,
-						`expected [number, number], got ${JSON.stringify(ci)}`,
+						`expected [number, number], got ${JSON.stringify(ci)}`
 					);
 					file_ok = false;
 				}
@@ -186,11 +186,9 @@ for (const file of files) {
 				const known_stats: readonly string[] = [
 					...STATS_NUMBER_FIELDS,
 					'confidence_interval_ns',
-					...OPTIONAL_STATS_FIELDS,
+					...OPTIONAL_STATS_FIELDS
 				];
-				const extra = Object.keys(result.stats).filter(
-					(k) => !known_stats.includes(k),
-				);
+				const extra = Object.keys(result.stats).filter((k) => !known_stats.includes(k));
 				if (extra.length > 0) {
 					fail(file, `${rp}.stats`, `unexpected fields: ${extra.join(', ')}`);
 					file_ok = false;
@@ -227,20 +225,12 @@ for (const file of files) {
 	// runner_categories (optional)
 	if (data.runner_categories !== undefined) {
 		if (!is_record(data.runner_categories)) {
-			fail(
-				file,
-				'runner_categories',
-				`expected object, got ${typeof data.runner_categories}`,
-			);
+			fail(file, 'runner_categories', `expected object, got ${typeof data.runner_categories}`);
 			file_ok = false;
 		} else {
 			for (const [key, val] of Object.entries(data.runner_categories)) {
 				if (typeof val !== 'string') {
-					fail(
-						file,
-						`runner_categories.${key}`,
-						`expected string, got ${typeof val}`,
-					);
+					fail(file, `runner_categories.${key}`, `expected string, got ${typeof val}`);
 					file_ok = false;
 				}
 			}

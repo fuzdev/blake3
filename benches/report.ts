@@ -22,7 +22,7 @@ import {
 	format_throughput,
 	get_bench_section,
 	get_git_commit_short,
-	SECTION_HEADERS,
+	SECTION_HEADERS
 } from './lib/bench_core.ts';
 import { runtime_format, st } from './lib/color.ts';
 
@@ -32,9 +32,7 @@ const markdown_mode = process.argv.includes('--markdown');
 // Auto-discover runtime results
 const runtimes: BenchSuiteResult[] = [];
 try {
-	const files = readdirSync(results_dir).filter(
-		(f) => f.endsWith('.json') && !/^\d/.test(f),
-	);
+	const files = readdirSync(results_dir).filter((f) => f.endsWith('.json') && !/^\d/.test(f));
 	for (const file of files) {
 		try {
 			const data = readFileSync(`${results_dir}/${file}`, 'utf-8');
@@ -98,9 +96,7 @@ function get_all_runner_names(): string[] {
 function get_relevant_runner_names(group_name: string): string[] {
 	// Which runtimes have any data for this group?
 	const active_runtimes = new Set(
-		runtimes
-			.filter((r) => r.groups.some((g) => g.name === group_name))
-			.map((r) => r.runtime),
+		runtimes.filter((r) => r.groups.some((g) => g.name === group_name)).map((r) => r.runtime)
 	);
 	// All runners ever seen in those runtimes (across all groups)
 	const relevant = new Set<string>();
@@ -151,7 +147,7 @@ function get_data_bytes(group_name: string): number | null {
 function get_mean_ns(
 	runtime: BenchSuiteResult,
 	group_name: string,
-	runner_name: string,
+	runner_name: string
 ): number | null {
 	const group = runtime.groups.find((g) => g.name === group_name);
 	const result = group?.results.find((r) => r.name === runner_name);
@@ -162,7 +158,7 @@ function get_mean_ns(
 function get_stats(
 	runtime: BenchSuiteResult,
 	group_name: string,
-	runner_name: string,
+	runner_name: string
 ): BenchGroupResult['results'][number]['stats'] | null {
 	const group = runtime.groups.find((g) => g.name === group_name);
 	const result = group?.results.find((r) => r.name === runner_name);
@@ -204,10 +200,7 @@ function get_size_groups(): SizeGroup[] {
 			groups.push({ label: 'Component', sizes: runtime.wasm_sizes });
 		} else {
 			// Pick the JS runtime with the most size entries
-			if (
-				!wasm_bindgen_best ||
-				runtime.wasm_sizes.length > wasm_bindgen_best.wasm_sizes.length
-			) {
+			if (!wasm_bindgen_best || runtime.wasm_sizes.length > wasm_bindgen_best.wasm_sizes.length) {
 				wasm_bindgen_best = runtime;
 			}
 		}
@@ -226,7 +219,7 @@ function get_size_groups(): SizeGroup[] {
  */
 function get_runner_category(
 	name: string,
-	runtime: BenchSuiteResult,
+	runtime: BenchSuiteResult
 ): 'blake3' | 'reference' | undefined {
 	// Prefer structured runner_categories field
 	const cat = runtime.runner_categories?.[name];
@@ -259,7 +252,7 @@ function get_active_runtimes(group_name: string): BenchSuiteResult[] {
  */
 function get_active_runner_names(
 	group_name: string,
-	active_runtimes: BenchSuiteResult[],
+	active_runtimes: BenchSuiteResult[]
 ): string[] {
 	return get_relevant_runner_names(group_name).filter((name) =>
 		active_runtimes.some((rt) => get_mean_ns(rt, group_name, name) !== null)
@@ -277,7 +270,7 @@ const BAR_CHART_GROUPS = new Set([
 	'streaming (1 MB)',
 	'hash_stream (1 KB)',
 	'hash_stream (64 KB)',
-	'hash_stream (1 MB)',
+	'hash_stream (1 MB)'
 ]);
 
 /** Format the runtime comparison bar chart as plain text lines. */
@@ -336,16 +329,17 @@ function format_runtime_bars(use_colors = false): string[] {
 					? `${tp_padded}${st('dim', `  ${time_str.padStart(max_time_width)}`)}`
 					: time_str.padStart(max_time_width);
 				lines.push(
-					`    ${st(fmt, entry.runtime.padEnd(max_runtime_len))}  ${st(fmt, filled)}${
-						st('dim', empty)
-					}  ${primary}${st('dim', ratio_str)}`,
+					`    ${st(fmt, entry.runtime.padEnd(max_runtime_len))}  ${st(fmt, filled)}${st(
+						'dim',
+						empty
+					)}  ${primary}${st('dim', ratio_str)}`
 				);
 			} else {
 				const primary = tp
 					? `${tp_padded}  ${time_str.padStart(max_time_width)}`
 					: time_str.padStart(max_time_width);
 				lines.push(
-					`    ${entry.runtime.padEnd(max_runtime_len)}  ${filled}${empty}  ${primary}${ratio_str}`,
+					`    ${entry.runtime.padEnd(max_runtime_len)}  ${filled}${empty}  ${primary}${ratio_str}`
 				);
 			}
 		}
@@ -459,7 +453,7 @@ function get_report_notes(): string[] {
 	);
 	if (has_npm_ref) {
 		notes.push(
-			'npm:blake3-wasm keyed_hash/derive_key use the streaming API internally (3 wasm calls) vs our one-shot wasm exports (1 call), explaining the large gap at small sizes.',
+			'npm:blake3-wasm keyed_hash/derive_key use the streaming API internally (3 wasm calls) vs our one-shot wasm exports (1 call), explaining the large gap at small sizes.'
 		);
 	}
 
@@ -467,10 +461,10 @@ function get_report_notes(): string[] {
 	const has_streams = runtimes.some((r) => r.groups.some((g) => g.name.includes('_stream')));
 	if (has_streams) {
 		notes.push(
-			'Stream functions (hash_stream, etc.) include ReadableStream + async reader.read() overhead per iteration. Compare with "streaming" (sync hasher loop) for raw hash speed.',
+			'Stream functions (hash_stream, etc.) include ReadableStream + async reader.read() overhead per iteration. Compare with "streaming" (sync hasher loop) for raw hash speed.'
 		);
 		notes.push(
-			'Deno has ~3x higher per-read() overhead than Node.js, dominating stream results at small sizes.',
+			'Deno has ~3x higher per-read() overhead than Node.js, dominating stream results at small sizes.'
 		);
 	}
 
@@ -479,12 +473,12 @@ function get_report_notes(): string[] {
 	const has_node = runtimes.some((r) => r.runtime === 'Node.js');
 	if (has_deno) {
 		notes.push(
-			'Deno has ~5-9x higher per-call WASM overhead at small inputs vs Node.js (up to ~8x for hash at 32B). The wasm-bindgen glue code is identical — this is a Deno runtime characteristic.',
+			'Deno has ~5-9x higher per-call WASM overhead at small inputs vs Node.js (up to ~8x for hash at 32B). The wasm-bindgen glue code is identical — this is a Deno runtime characteristic.'
 		);
 	}
 	if (has_deno && has_node) {
 		notes.push(
-			"At 1 MB, Deno's streaming throughput matches or slightly exceeds Node.js. The large Deno overhead at small inputs shrinks to <5% at 1 MB.",
+			"At 1 MB, Deno's streaming throughput matches or slightly exceeds Node.js. The large Deno overhead at small inputs shrinks to <5% at 1 MB."
 		);
 	}
 
@@ -492,12 +486,12 @@ function get_report_notes(): string[] {
 	const has_bun = runtimes.some((r) => r.runtime === 'Bun');
 	if (has_bun) {
 		notes.push(
-			'Bun has a WASM SIMD regression — blake3_wasm (SIMD) is slower than blake3_wasm_small (no SIMD). This is a Bun runtime issue, not a code issue.',
+			'Bun has a WASM SIMD regression — blake3_wasm (SIMD) is slower than blake3_wasm_small (no SIMD). This is a Bun runtime issue, not a code issue.'
 		);
 	}
 	if (has_bun && has_npm_ref) {
 		notes.push(
-			'On Bun, blake3_wasm (SIMD) is slower than npm:blake3-wasm at most sizes due to the WASM SIMD regression. Prefer blake3_wasm_small on Bun — it achieves parity with npm at large inputs.',
+			'On Bun, blake3_wasm (SIMD) is slower than npm:blake3-wasm at most sizes due to the WASM SIMD regression. Prefer blake3_wasm_small on Bun — it achieves parity with npm at large inputs.'
 		);
 	}
 
@@ -555,7 +549,7 @@ function format_text(): string {
 					}
 					runtime_cells.set(runtime.runtime, {
 						text,
-						is_best: !ratio_str,
+						is_best: !ratio_str
 					});
 				} else {
 					runtime_cells.set(runtime.runtime, { text: 'N/A', is_best: false });
@@ -577,7 +571,7 @@ function format_text(): string {
 	}
 	const col_width = Math.max(
 		max_cell_width + 2,
-		Math.max(...runtime_labels.map((l) => l.length)) + 2,
+		Math.max(...runtime_labels.map((l) => l.length)) + 2
 	);
 
 	// Tabular section with inline ratio annotations, throughput, and ±CI
@@ -594,9 +588,7 @@ function format_text(): string {
 				lines.push(st('bold', SECTION_HEADERS['component']));
 				lines.push('');
 
-				const comp_groups = all_group_names.filter(
-					(g) => get_bench_section(g) === 'component',
-				);
+				const comp_groups = all_group_names.filter((g) => get_bench_section(g) === 'component');
 				const comp_runtimes = runtimes.filter((r) =>
 					comp_groups.some((g) => r.groups.some((rg) => rg.name === g))
 				);
@@ -614,9 +606,10 @@ function format_text(): string {
 							const ci_val = format_ci(result.stats);
 							const ci_str = ci_val ? ` \u00b1${ci_val}` : '';
 							const cell = data_bytes
-								? `${
-									format_throughput(result.stats.ops_per_second, data_bytes)
-								} (${formatted}${ci_str})`
+								? `${format_throughput(
+										result.stats.ops_per_second,
+										data_bytes
+									)} (${formatted}${ci_str})`
 								: `${formatted}${ci_str}`;
 							row_cells.set(rt.runtime, cell);
 							if (cell.length > comp_max_cell) comp_max_cell = cell.length;
@@ -625,24 +618,22 @@ function format_text(): string {
 					comp_rows.push({ group: g, cells: row_cells });
 				}
 
-				const comp_label_width = Math.max(
-					24,
-					...comp_groups.map((g) => g.length + 4),
-				);
+				const comp_label_width = Math.max(24, ...comp_groups.map((g) => g.length + 4));
 				const comp_col = Math.max(
 					comp_max_cell + 2,
-					Math.max(...comp_runtimes.map((r) => r.runtime.length)) + 2,
+					Math.max(...comp_runtimes.map((r) => r.runtime.length)) + 2
 				);
 
-				const comp_header = ''.padEnd(comp_label_width) +
-					comp_runtimes.map((r) => {
-						const i = runtimes.indexOf(r);
-						return st(runtime_format(r.runtime, i), r.runtime.padStart(comp_col));
-					}).join('');
+				const comp_header =
+					''.padEnd(comp_label_width) +
+					comp_runtimes
+						.map((r) => {
+							const i = runtimes.indexOf(r);
+							return st(runtime_format(r.runtime, i), r.runtime.padStart(comp_col));
+						})
+						.join('');
 				lines.push(comp_header);
-				lines.push(
-					''.padEnd(comp_label_width) + '-'.repeat(comp_col * comp_runtimes.length),
-				);
+				lines.push(''.padEnd(comp_label_width) + '-'.repeat(comp_col * comp_runtimes.length));
 
 				for (const { group, cells } of comp_rows) {
 					let line = `  ${group.padEnd(comp_label_width - 2)}`;
@@ -668,11 +659,14 @@ function format_text(): string {
 		lines.push(st('bold', `--- ${group_name} ---`));
 
 		const group_runtimes = get_active_runtimes(group_name);
-		const header = ''.padEnd(label_width) +
-			group_runtimes.map((r) => {
-				const i = runtimes.indexOf(r);
-				return st(runtime_format(r.runtime, i), r.runtime.padStart(col_width));
-			}).join('');
+		const header =
+			''.padEnd(label_width) +
+			group_runtimes
+				.map((r) => {
+					const i = runtimes.indexOf(r);
+					return st(runtime_format(r.runtime, i), r.runtime.padStart(col_width));
+				})
+				.join('');
 		lines.push(header);
 		lines.push(''.padEnd(label_width) + '-'.repeat(col_width * group_runtimes.length));
 
@@ -712,13 +706,10 @@ function format_text(): string {
 
 		const runtime_labels_npm = vs_npm.runtimes_with_npm.map((r) => r.runtime);
 		const npm_col = 12;
-		const npm_label_width = Math.max(
-			24,
-			...vs_npm.groups.map((g) => g.name.length + 4),
-		);
+		const npm_label_width = Math.max(24, ...vs_npm.groups.map((g) => g.name.length + 4));
 
-		const npm_header = ''.padEnd(npm_label_width) +
-			runtime_labels_npm.map((l) => l.padStart(npm_col)).join('');
+		const npm_header =
+			''.padEnd(npm_label_width) + runtime_labels_npm.map((l) => l.padStart(npm_col)).join('');
 		lines.push(npm_header);
 
 		for (const group of vs_npm.groups) {
@@ -750,13 +741,10 @@ function format_text(): string {
 
 		const runtime_labels_simd = simd.runtimes_with_both.map((r) => r.runtime);
 		const simd_col = 12;
-		const simd_label_width = Math.max(
-			24,
-			...simd.groups.map((g) => g.name.length + 4),
-		);
+		const simd_label_width = Math.max(24, ...simd.groups.map((g) => g.name.length + 4));
 
-		const simd_col_header = ''.padEnd(simd_label_width) +
-			runtime_labels_simd.map((l) => l.padStart(simd_col)).join('');
+		const simd_col_header =
+			''.padEnd(simd_label_width) + runtime_labels_simd.map((l) => l.padStart(simd_col)).join('');
 
 		let simd_section: BenchSection | '' = '';
 		for (const group of simd.groups) {
@@ -794,7 +782,7 @@ function format_text(): string {
 		// Find the reference runner's WASM size as baseline, using the source runtime
 		const source_runtime = runtimes.find((r) => r.wasm_sizes === group.sizes) ?? runtimes[0];
 		const ref_entry = group.sizes.find(
-			(s) => get_runner_category(s.label, source_runtime) === 'reference',
+			(s) => get_runner_category(s.label, source_runtime) === 'reference'
 		);
 		const ref_size = ref_entry?.bytes;
 		for (const { label, bytes } of group.sizes) {
@@ -809,7 +797,7 @@ function format_text(): string {
 				}
 			}
 			lines.push(
-				`  ${label.padEnd(max_label)}  ${String(bytes).padStart(8)} bytes  (${kb} KB)${delta}`,
+				`  ${label.padEnd(max_label)}  ${String(bytes).padStart(8)} bytes  (${kb} KB)${delta}`
 			);
 		}
 		lines.push('');
@@ -859,7 +847,7 @@ function format_markdown(): string {
 				lines.push('');
 
 				const comp_groups = get_all_group_names().filter(
-					(g) => get_bench_section(g) === 'component',
+					(g) => get_bench_section(g) === 'component'
 				);
 				const comp_runtimes = runtimes.filter((r) =>
 					comp_groups.some((g) => r.groups.some((rg) => rg.name === g))
@@ -988,7 +976,7 @@ function format_markdown(): string {
 		}
 		lines.push('');
 		lines.push(
-			'>1.0 = blake3_wasm faster, <1.0 = npm:blake3-wasm faster. Bold = we win, italic = npm wins.',
+			'>1.0 = blake3_wasm faster, <1.0 = npm:blake3-wasm faster. Bold = we win, italic = npm wins.'
 		);
 		lines.push('');
 	}
@@ -1034,7 +1022,7 @@ function format_markdown(): string {
 		}
 		lines.push('');
 		lines.push(
-			'>1.0 = SIMD faster, <1.0 = SIMD slower (Bun regression). Bold = SIMD wins, italic = SIMD loses.',
+			'>1.0 = SIMD faster, <1.0 = SIMD slower (Bun regression). Bold = SIMD wins, italic = SIMD loses.'
 		);
 		lines.push('');
 	}
@@ -1051,7 +1039,7 @@ function format_markdown(): string {
 			}
 			const md_source_runtime = runtimes.find((r) => r.wasm_sizes === group.sizes) ?? runtimes[0];
 			const md_ref_entry = group.sizes.find(
-				(s) => get_runner_category(s.label, md_source_runtime) === 'reference',
+				(s) => get_runner_category(s.label, md_source_runtime) === 'reference'
 			);
 			const md_ref_size = md_ref_entry?.bytes;
 			if (md_ref_size) {
@@ -1120,7 +1108,7 @@ try {
 	new Deno.Command('deno', {
 		args: ['fmt', `${results_dir}/report.md`, history_path],
 		stdout: 'null',
-		stderr: 'null',
+		stderr: 'null'
 	}).outputSync();
 } catch {
 	// Non-fatal — deno may not be available in all environments

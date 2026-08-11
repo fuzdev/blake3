@@ -73,7 +73,7 @@ function auto_detect_files(): [string, string] {
 		console.error(
 			`Need at least 2 timestamped result files${
 				runtime_filter ? ` for runtime "${runtime_filter}"` : ''
-			} in ${results_dir}/`,
+			} in ${results_dir}/`
 		);
 		process.exit(1);
 	}
@@ -82,9 +82,8 @@ function auto_detect_files(): [string, string] {
 	return [matching[1], matching[0]];
 }
 
-const [base_path, current_path] = file_args.length >= 2
-	? [file_args[0], file_args[1]]
-	: auto_detect_files();
+const [base_path, current_path] =
+	file_args.length >= 2 ? [file_args[0], file_args[1]] : auto_detect_files();
 
 const base = load_result(base_path);
 const current = load_result(current_path);
@@ -100,7 +99,7 @@ console.log();
 // Collect all mean_ns for unit detection
 const all_ns = [
 	...base.groups.flatMap((g) => g.results.map((r) => r.stats.mean_ns)),
-	...current.groups.flatMap((g) => g.results.map((r) => r.stats.mean_ns)),
+	...current.groups.flatMap((g) => g.results.map((r) => r.stats.mean_ns))
 ];
 const unit = time_unit_detect_best(all_ns);
 
@@ -150,14 +149,14 @@ for (const base_group of base.groups) {
 					mean_ns: base_stats.mean_ns,
 					std_dev_ns: base_stats.std_dev_ns,
 					sample_size: base_stats.sample_size,
-					confidence_interval_ns: base_stats.confidence_interval_ns,
+					confidence_interval_ns: base_stats.confidence_interval_ns
 				},
 				{
 					mean_ns: current_stats.mean_ns,
 					std_dev_ns: current_stats.std_dev_ns,
 					sample_size: current_stats.sample_size,
-					confidence_interval_ns: current_stats.confidence_interval_ns,
-				},
+					confidence_interval_ns: current_stats.confidence_interval_ns
+				}
 			);
 			significant = comparison.significant;
 			effect_magnitude = comparison.effect_magnitude;
@@ -181,7 +180,7 @@ for (const base_group of base.groups) {
 			significant,
 			effect_magnitude,
 			p_value,
-			verdict,
+			verdict
 		});
 	}
 }
@@ -195,8 +194,8 @@ console.log(
 		'bold',
 		`${'Group'.padEnd(group_width)}${'Runner'.padEnd(label_width)}` +
 			`${'Base'.padStart(12)}${'Current'.padStart(12)}${'Change'.padStart(10)}` +
-			`${'p-value'.padStart(10)}  Verdict`,
-	),
+			`${'p-value'.padStart(10)}  Verdict`
+	)
 );
 console.log('-'.repeat(100));
 
@@ -223,16 +222,17 @@ for (const d of diffs) {
 		verdict_str = st('dim', 'unchanged');
 	}
 
-	const change_colored = d.change_pct > threshold_pct && d.significant
-		? st('red', change_str.padStart(10))
-		: d.change_pct < -threshold_pct && d.significant
-		? st('green', change_str.padStart(10))
-		: change_str.padStart(10);
+	const change_colored =
+		d.change_pct > threshold_pct && d.significant
+			? st('red', change_str.padStart(10))
+			: d.change_pct < -threshold_pct && d.significant
+				? st('green', change_str.padStart(10))
+				: change_str.padStart(10);
 
 	console.log(
 		`${d.group.padEnd(group_width)}${d.runner.padEnd(label_width)}` +
 			`${base_fmt.padStart(12)}${current_fmt.padStart(12)}${change_colored}` +
-			`${p_str.padStart(10)}  ${verdict_str}`,
+			`${p_str.padStart(10)}  ${verdict_str}`
 	);
 }
 
@@ -244,7 +244,7 @@ console.log(st('bold', 'Summary:'));
 console.log(
 	`  ${diffs.length} comparisons, ` +
 		`${regressions.length} regressions, ` +
-		`${improvements.length} improvements`,
+		`${improvements.length} improvements`
 );
 
 if (has_regression) {
@@ -252,8 +252,8 @@ if (has_regression) {
 	console.log(
 		st(
 			'red',
-			`FAIL: ${regressions.length} significant regression(s) above ${threshold_pct}% threshold`,
-		),
+			`FAIL: ${regressions.length} significant regression(s) above ${threshold_pct}% threshold`
+		)
 	);
 	process.exit(1);
 } else {

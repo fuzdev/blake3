@@ -35,7 +35,7 @@ const fetch_re =
 
 const entries = [...Deno.readDirSync(dir)];
 const js_candidates = entries.filter(
-	(e) => e.isFile && e.name.endsWith('.js') && !e.name.includes('_bg'),
+	(e) => e.isFile && e.name.endsWith('.js') && !e.name.includes('_bg')
 );
 
 let js_path: string | undefined;
@@ -63,7 +63,7 @@ const wasm_filename = fetch_match[1];
 js = js.replace(
 	fetch_re,
 	`const wasmBytes = Deno.readFileSync(new URL('${wasm_filename}', import.meta.url));\n` +
-		`const wasmInstantiated = await WebAssembly.instantiate(wasmBytes, __wbg_get_imports());`,
+		`const wasmInstantiated = await WebAssembly.instantiate(wasmBytes, __wbg_get_imports());`
 );
 
 Deno.writeTextFileSync(js_path, js);
@@ -108,7 +108,7 @@ const stub_lines = [
 	'// manually instantiated via WebAssembly.instantiate() with real imports',
 	'// from __wbg_get_imports(). These exports satisfy compile-time resolution only.',
 	...fn_names.map((name) => `export function ${name}() {}`),
-	'',
+	''
 ];
 
 const bg_path = `${dir}/${bg_filename}`;
