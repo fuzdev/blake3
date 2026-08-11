@@ -293,6 +293,10 @@ deno task publish              # dry-run
 deno task publish --wetrun     # version + check + build + validate + publish
 ```
 
+## Contributing
+
+[fuz.dev/contributing](https://www.fuz.dev/contributing)
+
 ## License
 
 [MIT](LICENSE)
