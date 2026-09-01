@@ -2,6 +2,7 @@
 name = "blake3_debug"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 description = "Development utilities for blake3_wasm (comparison, test vectors)"
 
 [[bin]]
