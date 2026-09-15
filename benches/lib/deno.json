@@ -1,6 +1,6 @@
 {
 	"imports": {
-		"@fuzdev/fuz_util": "npm:@fuzdev/fuz_util@0.52.1"
+		"@fuzdev/fuz_util": "npm:@fuzdev/fuz_util@0.68.0"
 	},
 	"fmt": {
 		"useTabs": true,
