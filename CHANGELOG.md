@@ -1,5 +1,11 @@
 # @fuzdev/blake3
 
+## 0.2.0
+
+### Minor Changes
+
+- 9b5eefe: **breaking** chore: the npm packages are renamed to kebab-case — `@fuzdev/blake3_wasm` → `@fuzdev/blake3-wasm`, `@fuzdev/blake3_wasm_small` → `@fuzdev/blake3-wasm-small`; crate names are unchanged
+
 ## 0.1.1
 
 ### Patch Changes

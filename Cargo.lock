@@ -95,7 +95,7 @@ dependencies = [
 
 [[package]]
 name = "blake3_bench_wasmtime"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -105,7 +105,7 @@ dependencies = [
 
 [[package]]
 name = "blake3_component"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "blake3",
  "wit-bindgen 0.57.1",
@@ -113,14 +113,14 @@ dependencies = [
 
 [[package]]
 name = "blake3_debug"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "blake3",
 ]
 
 [[package]]
 name = "blake3_wasm"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "blake3_wasm_core",
  "wasm-bindgen",
@@ -128,7 +128,7 @@ dependencies = [
 
 [[package]]
 name = "blake3_wasm_core"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "blake3",
  "wasm-bindgen",
@@ -136,7 +136,7 @@ dependencies = [
 
 [[package]]
 name = "blake3_wasm_small"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "blake3_wasm_core",
  "wasm-bindgen",
