@@ -10,15 +10,15 @@ for TypeScript/JS, compiled to WASM from the
 Two builds with the same API:
 
 ```bash
-npm i @fuzdev/blake3_wasm        # SIMD — faster, 45 KB
-npm i @fuzdev/blake3_wasm_small  # no SIMD — smaller, 32 KB
+npm i @fuzdev/blake3-wasm        # SIMD — faster, 45 KB
+npm i @fuzdev/blake3-wasm-small  # no SIMD — smaller, 32 KB
 ```
 
-Use [`@fuzdev/blake3_wasm`](https://www.npmjs.com/package/@fuzdev/blake3_wasm)
+Use [`@fuzdev/blake3-wasm`](https://www.npmjs.com/package/@fuzdev/blake3-wasm)
 unless optimizing bundle size (or using Bun with its current SIMD issue).
 It enables [blake3](https://crates.io/crates/blake3)'s WASM SIMD optimizations
 and is 2-3x faster at 64KB+ inputs on Deno and Node.
-[`@fuzdev/blake3_wasm_small`](https://www.npmjs.com/package/@fuzdev/blake3_wasm_small)
+[`@fuzdev/blake3-wasm-small`](https://www.npmjs.com/package/@fuzdev/blake3-wasm-small)
 is ~30% smaller but loses the 2-3x SIMD gains
 (but it's up to ~2.5x faster on Bun, which has a WASM SIMD problem).
 See [benchmarks](#benchmarks) for details
@@ -29,7 +29,7 @@ See [benchmarks](#benchmarks) for details
 Also available via `npm:` specifier in Deno (jsr coming soon, user requests will speed it up):
 
 ```ts
-import { hash } from 'npm:@fuzdev/blake3_wasm';
+import { hash } from 'npm:@fuzdev/blake3-wasm';
 ```
 
 Only import one — importing both loads two separate WASM modules.
@@ -39,7 +39,7 @@ To swap builds without changing imports, use a bundler alias:
 // vite.config.ts — use the small build everywhere
 export default {
 	resolve: {
-		alias: { '@fuzdev/blake3_wasm': '@fuzdev/blake3_wasm_small' },
+		alias: { '@fuzdev/blake3-wasm': '@fuzdev/blake3-wasm-small' },
 	},
 };
 ```
@@ -47,7 +47,7 @@ export default {
 ## Usage
 
 ```ts
-import { Blake3Hasher, derive_key, hash, keyed_hash } from '@fuzdev/blake3_wasm';
+import { Blake3Hasher, derive_key, hash, keyed_hash } from '@fuzdev/blake3-wasm';
 
 // one-shot hash — returns 32-byte Uint8Array
 const digest = hash(new TextEncoder().encode('hello'));
@@ -74,7 +74,7 @@ In browsers, call `init()` once before using any hash functions.
 It's a no-op if already initialized, so calling it unconditionally is safe.
 
 ```ts
-import { hash, init } from '@fuzdev/blake3_wasm';
+import { hash, init } from '@fuzdev/blake3-wasm';
 
 await init();
 
@@ -91,7 +91,7 @@ which Vite and webpack handle automatically. Other bundlers may need a plugin fo
 // vite.config.ts
 export default {
 	optimizeDeps: {
-		exclude: ['@fuzdev/blake3_wasm'],
+		exclude: ['@fuzdev/blake3-wasm'],
 	},
 };
 ```
@@ -103,7 +103,7 @@ with WASM packages.
 For synchronous initialization in Web Workers, use `init_sync`:
 
 ```ts
-import { init_sync } from '@fuzdev/blake3_wasm';
+import { init_sync } from '@fuzdev/blake3-wasm';
 
 const wasm = await fetch('/blake3_wasm_bg.wasm').then((r) => r.arrayBuffer());
 init_sync({ module: wasm });
@@ -112,7 +112,7 @@ init_sync({ module: wasm });
 ### Hashing a `ReadableStream`
 
 ```ts
-import { derive_key_stream, hash_stream, keyed_hash_stream } from '@fuzdev/blake3_wasm';
+import { derive_key_stream, hash_stream, keyed_hash_stream } from '@fuzdev/blake3-wasm';
 
 // file: File from <input>, drop event, or fetch Response
 const digest = await hash_stream(file.stream());

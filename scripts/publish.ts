@@ -1,5 +1,5 @@
 /**
- * Publish script for @fuzdev/blake3_wasm and @fuzdev/blake3_wasm_small.
+ * Publish script for @fuzdev/blake3-wasm and @fuzdev/blake3-wasm-small.
  *
  * Dry-run by default — runs all validation but does not mutate the workspace.
  * Pass `--wetrun` to bump version, build, validate, and publish to npm.
@@ -18,8 +18,8 @@ const SENTINEL_PATH = '.changeset/.publish-in-progress';
 const dec = new TextDecoder();
 
 const web_packages = [
-	{ label: '@fuzdev/blake3_wasm', dir: 'crates/blake3_wasm/pkg/web' },
-	{ label: '@fuzdev/blake3_wasm_small', dir: 'crates/blake3_wasm_small/pkg/web' }
+	{ label: '@fuzdev/blake3-wasm', dir: 'crates/blake3_wasm/pkg/web' },
+	{ label: '@fuzdev/blake3-wasm-small', dir: 'crates/blake3_wasm_small/pkg/web' }
 ];
 
 /** The files a release mutates (changeset version + the version syncs). A scoped
@@ -245,11 +245,16 @@ run('deno task check', 'deno', ['task', 'check']);
 console.log('\n=== Step 5: Build WASM (all targets) ===');
 run('deno task build:wasm', 'deno', ['task', 'build:wasm']);
 
-// Step 6: Verify built package versions
+// Step 6: Verify built package names and versions
 
-console.log('\n=== Step 6: Verify built package versions ===');
+console.log('\n=== Step 6: Verify built package names and versions ===');
 for (const { label, dir } of web_packages) {
 	const built_pkg = JSON.parse(Deno.readTextFileSync(`${dir}/package.json`));
+	if (built_pkg.name !== label) {
+		console.error(`  FAIL: ${dir} built as ${built_pkg.name}, expected ${label}`);
+		console.error('  patch_npm_package.ts sets the npm name (wasm-pack emits the crate name).');
+		Deno.exit(1);
+	}
 	if (built_pkg.version === version) {
 		console.log(`  PASS: ${label} = v${version}`);
 	} else {

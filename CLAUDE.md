@@ -2,7 +2,7 @@
 
 > BLAKE3 hashing compiled to WASM from the `blake3` Rust crate
 
-Own WASM build of BLAKE3, packaged as `@fuzdev/blake3_wasm` and `@fuzdev/blake3_wasm_small`. Uses
+Own WASM build of BLAKE3, packaged as `@fuzdev/blake3-wasm` and `@fuzdev/blake3-wasm-small`. Uses
 `-Os` optimization with the blake3 crate's hand-optimized WASM SIMD implementation (`wasm32_simd`
 feature) for best throughput, plus a size-optimized build without SIMD.
 
@@ -39,17 +39,17 @@ blake3/
 │   │   ├── src/lib.rs             # pub use blake3_wasm_core::*;
 │   │   ├── types.ts               # Re-export from blake3_wasm_core
 │   │   ├── stream.ts             # Re-export from blake3_wasm_core
-│   │   ├── mod.ts                 # @fuzdev/blake3_wasm Deno entry (pkg/deno/)
-│   │   ├── mod_node.ts            # @fuzdev/blake3_wasm Node entry (pkg/web/)
-│   │   ├── jsr.json               # @fuzdev/blake3_wasm metadata
+│   │   ├── mod.ts                 # @fuzdev/blake3-wasm Deno entry (pkg/deno/)
+│   │   ├── mod_node.ts            # @fuzdev/blake3-wasm Node entry (pkg/web/)
+│   │   ├── jsr.json               # JSR metadata (@fuzdev/blake3, deferred)
 │   │   └── pkg/                   # wasm-pack output (gitignored)
 │   ├── blake3_wasm_small/         # WASM bindings — size-optimized (no SIMD)
 │   │   ├── src/lib.rs             # pub use blake3_wasm_core::*;
 │   │   ├── types.ts               # Re-export from blake3_wasm_core
 │   │   ├── stream.ts             # Re-export from blake3_wasm_core
-│   │   ├── mod.ts                 # @fuzdev/blake3_wasm_small Deno entry (pkg/deno/)
-│   │   ├── mod_node.ts            # @fuzdev/blake3_wasm_small Node entry (pkg/web/)
-│   │   ├── jsr.json               # @fuzdev/blake3_wasm_small metadata
+│   │   ├── mod.ts                 # @fuzdev/blake3-wasm-small Deno entry (pkg/deno/)
+│   │   ├── mod_node.ts            # @fuzdev/blake3-wasm-small Node entry (pkg/web/)
+│   │   ├── jsr.json               # JSR metadata (@fuzdev/blake3-small, deferred)
 │   │   └── pkg/                   # wasm-pack output (gitignored)
 │   ├── blake3_component/          # WASI component (WIT interface)
 │   │   └── src/lib.rs             # wit-bindgen implementation
@@ -403,7 +403,7 @@ Bun's WASM engine has poor SIMD performance — confirmed by blake3_wasm_small b
 Uses [changesets](https://github.com/changesets/changesets) for version management and changelog.
 Prerequisite: `npm i -g @changesets/cli`
 
-Both `@fuzdev/blake3_wasm` and `@fuzdev/blake3_wasm_small` are published to npm.
+Both `@fuzdev/blake3-wasm` and `@fuzdev/blake3-wasm-small` are published to npm.
 
 ### Version flow
 
@@ -432,6 +432,11 @@ web target build and generates files plus patches `package.json`:
 Package exports include `"./package.json"` self-reference and `"."` with `"node"` / `"default"`
 conditions so Node.js gets zero-config sync init and bundlers (Vite etc.) get the `browser.js`
 entry which works with `new URL(...)` WASM patterns natively.
+
+The npm names are kebab-case (`@fuzdev/blake3-wasm`, `@fuzdev/blake3-wasm-small`) while the
+crates stay snake_case (`blake3_wasm`, `blake3_wasm_small`), as do the generated file names
+(`blake3_wasm_bg.wasm`). wasm-pack derives the package name from the crate, so the patch
+overwrites `name`; `scripts/test_npm.js` and the publish script's version step both check it.
 
 `package.json` is also given `sideEffects: ["./index.js"]`, overriding wasm-pack's default
 (`["./snippets/*"]`, which declares `index.js` side-effect-free). The Node entry's top-level

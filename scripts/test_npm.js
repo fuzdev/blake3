@@ -1,5 +1,5 @@
 /**
- * Node.js tests for the npm packages (@fuzdev/blake3_wasm and @fuzdev/blake3_wasm_small).
+ * Node.js tests for the npm packages (@fuzdev/blake3-wasm and @fuzdev/blake3-wasm-small).
  *
  * Verifies the wasm-pack web target + auto-init wrapper works correctly
  * when imported as ESM in Node.js. Tests the same operations as
@@ -64,6 +64,13 @@ function hex_to_bytes(hex) {
 }
 
 describe(`package shape: ${pkg_dir}`, () => {
+	it('npm name is kebab-case, not the crate name', () => {
+		const expected = pkg_dir.includes('small')
+			? '@fuzdev/blake3-wasm-small'
+			: '@fuzdev/blake3-wasm';
+		assert.equal(pkg.name, expected);
+	});
+
 	it('index.js is marked side-effectful (auto-init survives tree-shaking)', () => {
 		assert.deepEqual(pkg.sideEffects, ['./index.js']);
 	});

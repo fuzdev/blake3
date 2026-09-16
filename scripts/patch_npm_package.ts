@@ -45,7 +45,7 @@ const base = main_js.name.replace(/\.js$/, '');
 const wasm_file = `${base}_bg.wasm`;
 const dts_file = `${base}.d.ts`;
 const is_small = base.includes('small');
-const pkg_name = is_small ? '@fuzdev/blake3_wasm_small' : '@fuzdev/blake3_wasm';
+const pkg_name = is_small ? '@fuzdev/blake3-wasm-small' : '@fuzdev/blake3-wasm';
 
 // 1. Generate stream.js from the canonical stream.ts (single source of truth).
 // Strip TypeScript-specific syntax via targeted transforms. The file is small and stable,
@@ -217,6 +217,8 @@ console.log(`Created ${dir}/index.d.ts`);
 const pkg_path = `${dir}/package.json`;
 const pkg = JSON.parse(Deno.readTextFileSync(pkg_path));
 
+// wasm-pack names the package after the crate (`@fuzdev/blake3_wasm`); npm names are kebab-case.
+pkg.name = pkg_name;
 pkg.description = 'BLAKE3 hashing compiled to WASM';
 pkg.type = 'module';
 pkg.exports = {
@@ -293,8 +295,9 @@ let npm_body = readme_full.slice(0, architecture_idx).replace('# blake3\n', `# $
 if (is_small) {
 	// Replace import paths and WASM filenames so examples match the installed package
 	npm_body = npm_body
-		.replaceAll("from '@fuzdev/blake3_wasm'", "from '@fuzdev/blake3_wasm_small'")
-		.replaceAll("from 'npm:@fuzdev/blake3_wasm'", "from 'npm:@fuzdev/blake3_wasm_small'")
+		.replaceAll("from '@fuzdev/blake3-wasm'", "from '@fuzdev/blake3-wasm-small'")
+		.replaceAll("from 'npm:@fuzdev/blake3-wasm'", "from 'npm:@fuzdev/blake3-wasm-small'")
+		.replaceAll("exclude: ['@fuzdev/blake3-wasm']", "exclude: ['@fuzdev/blake3-wasm-small']")
 		.replaceAll('blake3_wasm_bg.wasm', 'blake3_wasm_small_bg.wasm');
 	// Remove bundler alias tip (not relevant when already using the small build)
 	npm_body = npm_body.replace(

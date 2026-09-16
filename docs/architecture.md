@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Own BLAKE3 WASM build from the `blake3` Rust crate, published as `@fuzdev/blake3_wasm` (SIMD, `-Os`, ~45 KB) for maximum throughput on Deno/Node.js and `@fuzdev/blake3_wasm_small` (no SIMD, `-Os`, ~32 KB) for Bun and bundle-size-sensitive contexts. Benchmark tooling compares against `npm:blake3-wasm`.
+Own BLAKE3 WASM build from the `blake3` Rust crate, published as `@fuzdev/blake3-wasm` (SIMD, `-Os`, ~45 KB) for maximum throughput on Deno/Node.js and `@fuzdev/blake3-wasm-small` (no SIMD, `-Os`, ~32 KB) for Bun and bundle-size-sensitive contexts. Benchmark tooling compares against `npm:blake3-wasm`.
 
 ## Crate Structure
 
@@ -74,14 +74,14 @@ crates/blake3_wasm_core/
 crates/blake3_wasm/
 ├── types.ts          # Re-export from blake3_wasm_core
 ├── stream.ts         # Re-export from blake3_wasm_core
-├── mod.ts            # @fuzdev/blake3_wasm → pkg/deno/
-└── mod_node.ts       # @fuzdev/blake3_wasm → pkg/web/ (node:fs + init_sync)
+├── mod.ts            # @fuzdev/blake3-wasm → pkg/deno/
+└── mod_node.ts       # @fuzdev/blake3-wasm → pkg/web/ (node:fs + init_sync)
 
 crates/blake3_wasm_small/
 ├── types.ts          # Re-export from blake3_wasm_core
 ├── stream.ts         # Re-export from blake3_wasm_core
-├── mod.ts            # @fuzdev/blake3_wasm_small → pkg/deno/
-└── mod_node.ts       # @fuzdev/blake3_wasm_small → pkg/web/ (node:fs + init_sync)
+├── mod.ts            # @fuzdev/blake3-wasm-small → pkg/deno/
+└── mod_node.ts       # @fuzdev/blake3-wasm-small → pkg/web/ (node:fs + init_sync)
 ```
 
 ## Test Vectors
