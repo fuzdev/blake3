@@ -229,15 +229,9 @@ for (const jsr_path of jsr_paths) {
 	}
 }
 
-if (wetrun) {
-	// Normalize formatting of files written by changeset version (package.json, CHANGELOG.md)
-	// and the syncs above, so step 4's `deno fmt --check` passes cleanly.
-	run('deno fmt', 'deno', ['fmt']);
-}
-
 // Step 4: Check
 
-console.log('\n=== Step 4: Check (typecheck + test + clippy + fmt) ===');
+console.log('\n=== Step 4: Check (typecheck + test + clippy + cargo fmt + tsv format) ===');
 run('deno task check', 'deno', ['task', 'check']);
 
 // Step 5: Build
@@ -304,12 +298,29 @@ for (let i = 0; i < web_packages.length; i++) {
 		console.log(`  Published ${label}@${version}`);
 	} else {
 		console.log(`  [dry-run] ${label}:`);
-		run(
-			`npm publish --dry-run ${label}`,
-			'npm',
-			['publish', '--dry-run', '--access', 'public'],
-			dir
-		);
+		const result = new Deno.Command('npm', {
+			args: ['publish', '--dry-run', '--access', 'public'],
+			cwd: dir,
+			stdout: 'piped',
+			stderr: 'piped'
+		}).outputSync();
+		// npm prints the tarball notice to stderr — surface it regardless.
+		const stderr = dec.decode(result.stderr).trim();
+		if (stderr) console.log(stderr);
+		if (result.success) {
+			console.log(`  PASS: ${label} packs cleanly`);
+		} else if (/cannot publish over|previously published version/i.test(stderr)) {
+			// A dry-run never bumps, so between releases it dry-publishes the CURRENT
+			// (already-published) version. A wetrun bumps first, so this isn't a failure.
+			console.log(
+				`  PASS: ${label} packs cleanly (v${version} already published — a wetrun publishes the bumped version)`
+			);
+		} else {
+			const stdout = dec.decode(result.stdout).trim();
+			if (stdout) console.error(stdout);
+			console.error(`\n  FAIL: npm publish --dry-run ${label} (exit code ${result.code})`);
+			Deno.exit(1);
+		}
 	}
 }
 

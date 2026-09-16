@@ -11,7 +11,7 @@ feature) for best throughput, plus a size-optimized build without SIMD.
 ## Quick Start
 
 ```bash
-deno task check                    # Rust: typecheck + test:rust + clippy + cargo fmt --all + deno fmt
+deno task check                    # Rust: typecheck + test:rust + clippy + cargo fmt --all + tsv format
 deno task build:wasm               # Build all WASM targets
 deno task compare                  # Build + correctness: all builds vs test vectors
 deno task test                     # All correctness tests (requires built artifacts)
@@ -194,8 +194,8 @@ cargo run -p blake3_debug -- test-vectors              # JSON test vectors for T
 All tasks defined in `deno.json`. Key commands:
 
 ```bash
-deno task check                    # Full check (typecheck + test:rust + clippy + cargo fmt --all + deno fmt)
-deno task format                   # Format all (cargo fmt --all + deno fmt)
+deno task check                    # Full check (typecheck + test:rust + clippy + cargo fmt --all + tsv format --check)
+deno task format                   # Format all (cargo fmt --all + tsv format)
 deno task build:wasm               # Build all WASM in parallel (blake3_wasm + blake3_wasm_small, deno + web)
 deno task build:wasm:deno          # Build blake3_wasm WASM (Deno target)
 deno task build:wasm:web           # Build blake3_wasm WASM (web/Node.js target + npm patch)
@@ -312,6 +312,7 @@ The `fuzdev:blake3` WIT package (`wit/blake3.wit`) defines the component model i
 
 ## Tooling Requirements
 
+- **`tsv`**: the formatter `deno task check` / `format` run (`tsv format`), on `PATH`
 - **`wasm-pack`**: `cargo install wasm-pack` — wasm-bindgen builds for JS runtimes
 - **`wasm32-unknown-unknown` target**: `rustup target add wasm32-unknown-unknown` — required by wasm-pack
 - **`cargo-component`**: `cargo install cargo-component` — builds WASM components from Rust
@@ -326,7 +327,8 @@ The `fuzdev:blake3` WIT package (`wit/blake3.wit`) defines the component model i
 - **WASM SIMD**: blake3_wasm depends on blake3_wasm_core with `simd` feature + `-C target-feature=+simd128` in RUSTFLAGS
 - **WASM small**: blake3_wasm_small uses `-C opt-level=s` (no SIMD) with wasm-opt `-Os`
 - **wasm-opt**: blake3_wasm uses `-Os` with `--enable-simd`, blake3_wasm_small uses `-Os` (no SIMD flags)
-- **Deno formatting**: tabs, 100 line width, single quotes
+- **Formatting**: `tsv format` for TS/JS (the `deno task check` gate); `deno.json` `fmt` config only
+  serves `deno fmt` on the generated bench markdown
 - **Cross-runtime TS**: use `node:process`, `node:fs` (Deno supports these)
 - **RUSTFLAGS** for WASM optimization (wasm-pack doesn't support `--profile`)
 - **WIT-first design**: component interfaces defined in WIT, implemented via `wit-bindgen`
@@ -462,11 +464,12 @@ deno task publish --wetrun         # changeset version + sync + check + build + 
    Writes `.changeset/.publish-in-progress` sentinel after bumping; detects retry via sentinel.
    Retry mode: sentinel present → skip version bump, proceed from current `package.json` version
 3. Sync version to `Cargo.toml` and `jsr.json` (wetrun only — dry-run reports state)
-4. `deno task check` (typecheck + test + clippy + cargo fmt --all + deno fmt)
+4. `deno task check` (typecheck + test + clippy + cargo fmt --all + tsv format --check)
 5. `deno task build:wasm` (all WASM targets)
-6. Verify `pkg/web/package.json` version matches
+6. Verify `pkg/web/package.json` name (kebab-case) and version match
 7. `deno task validate:npm` + `deno task validate:size` + correctness vs test vectors (`scripts/compare.ts`) + `deno task validate:compile`
-8. `npm publish` from `pkg/web/` dir (`--dry-run` unless `--wetrun`), skipping already-published packages. Remove sentinel after all succeed
+8. `npm publish` from `pkg/web/` dir (`--dry-run` unless `--wetrun`), skipping already-published packages. Remove sentinel after all succeed.
+   A dry-run between releases packs the already-published current version; npm's "cannot publish over" refusal counts as a pass there
 
 ### JSR
 

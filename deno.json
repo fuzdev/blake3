@@ -14,8 +14,8 @@
 		"typecheck": "cargo check --workspace",
 		"test:rust": "cargo test --workspace",
 		"lint": "cargo clippy --workspace",
-		"check": "deno task typecheck && deno task test:rust && deno task lint && cargo fmt --all --check && deno fmt --check",
-		"format": "cargo fmt --all && deno fmt",
+		"check": "deno task typecheck && deno task test:rust && deno task lint && cargo fmt --all --check && tsv format --check .",
+		"format": "cargo fmt --all && tsv format .",
 
 		"test:deno": "deno test --allow-read scripts/compare.ts",
 		"test:deno:small": "deno test --allow-read scripts/compare.ts -- --small",
@@ -49,6 +49,7 @@
 
 		"publish": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/publish.ts"
 	},
+	// Only `benches/report.ts` runs `deno fmt` now (on its generated markdown); TS/JS is formatted by `tsv format`.
 	"fmt": {
 		"useTabs": true,
 		"lineWidth": 100,

@@ -1103,7 +1103,7 @@ const report_commit = short ? `_${short}` : '';
 const history_path = `${results_dir}/${ts}_report${report_commit}.md`;
 writeFileSync(history_path, md);
 
-// Format generated markdown so it passes deno fmt --check
+// Align the generated markdown tables (deno fmt — tsv does not format markdown)
 try {
 	new Deno.Command('deno', {
 		args: ['fmt', `${results_dir}/report.md`, history_path],
