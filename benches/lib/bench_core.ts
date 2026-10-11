@@ -268,8 +268,9 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 	const { duration_ms, warmup_iterations, runners, runtime_label, output_json } = config;
 
 	// GC between benchmark groups to prevent GC pauses from landing inside measurements
-	const gc =
-		config.gc_between_groups && typeof globalThis.gc === 'function' ? globalThis.gc : undefined;
+	// `gc` is only declared by Node's types, so read it untyped to check under Deno too.
+	const global_gc = (globalThis as { gc?: () => void }).gc;
+	const gc = config.gc_between_groups && typeof global_gc === 'function' ? global_gc : undefined;
 
 	console.log(st('bold', `BLAKE3 WASM Benchmark — ${runtime_label}`));
 	if (gc) console.log(st('dim', '(GC enabled between groups)'));
