@@ -316,7 +316,7 @@ Cross-runtime results (Deno, Node.js, Bun, Wasmtime) are available in the
 
 ## License
 
-[MIT](https://github.com/fuzdev/blake3/blob/main/LICENSE)
+[0BSD](https://github.com/fuzdev/blake3/blob/main/LICENSE)
 `;
 
 Deno.writeTextFileSync(`${dir}/README.md`, npm_readme);

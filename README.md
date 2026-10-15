@@ -299,4 +299,4 @@ deno task publish --wetrun     # version + check + build + validate + publish
 
 ## License
 
-[MIT](LICENSE)
+[0BSD](LICENSE)

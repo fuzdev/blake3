@@ -5,7 +5,7 @@ members = ["crates/blake3_wasm_core", "crates/blake3_wasm", "crates/blake3_wasm_
 [workspace.package]
 version = "0.2.0"
 edition = "2024"
-license = "MIT"
+license = "0BSD"
 repository = "https://github.com/fuzdev/blake3"
 
 [workspace.dependencies]

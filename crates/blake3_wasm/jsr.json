@@ -1,7 +1,7 @@
 {
 	"name": "@fuzdev/blake3",
 	"version": "0.2.0",
-	"license": "MIT",
+	"license": "0BSD",
 	"exports": {
 		".": "./mod.ts",
 		"./node": "./mod_node.ts"
