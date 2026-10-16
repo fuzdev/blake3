@@ -1,7 +1,7 @@
 {
 	"minimumDependencyAge": { "age": "P1D", "exclude": ["npm:@fuzdev/*", "npm:@ryanatkn/*"] },
 	"imports": {
-		"@fuzdev/fuz_util": "npm:@fuzdev/fuz_util@0.68.0"
+		"@fuzdev/fuz_util": "npm:@fuzdev/fuz_util@0.76.0"
 	},
 	"fmt": {
 		"useTabs": true,

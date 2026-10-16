@@ -1,12 +1,16 @@
 {
   "version": "5",
   "specifiers": {
-    "npm:@fuzdev/fuz_util@0.68.0": "0.68.0_esm-env@1.2.2"
+    "npm:@fuzdev/fuz_util@0.76.0": "0.76.0_@fuzdev+fuz_schema@0.4.0_esm-env@1.2.2"
   },
   "npm": {
-    "@fuzdev/fuz_util@0.68.0_esm-env@1.2.2": {
-      "integrity": "sha512-v/cbFLcdjLdKHCpJghol7S9Sq3GJyYG6t3OwziuXzjdFZ/R7WvnRlHcaXSu7ViUot50HYBsFNxZDoWrunTWwtQ==",
+    "@fuzdev/fuz_schema@0.4.0": {
+      "integrity": "sha512-LeVShuQtqrqGBL+UPmDeyDX/pkBl7k0xdtBeu1dA2G+rUt6Hg+AtdcxRhFtHM546XJemXOSnjLNpXHAsh2d1fg=="
+    },
+    "@fuzdev/fuz_util@0.76.0_@fuzdev+fuz_schema@0.4.0_esm-env@1.2.2": {
+      "integrity": "sha512-pZgfloIlgt+RXqIUWYuKLabeVXKJEP+vxL08m8LbUwRUQiTQUe8gzIvT2+ZFltD5EWWdIpbaGneH7+YVLfAZ3w==",
       "dependencies": [
+        "@fuzdev/fuz_schema",
         "esm-env"
       ]
     },
@@ -16,7 +20,7 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:@fuzdev/fuz_util@0.68.0"
+      "npm:@fuzdev/fuz_util@0.76.0"
     ]
   }
 }
