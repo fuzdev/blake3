@@ -235,10 +235,10 @@ See [docs/architecture.md](docs/architecture.md) for crate structure, build pipe
 Requires [Rust](https://rustup.rs/) and [Deno](https://deno.land/).
 
 ```bash
-# prerequisites
+# prerequisites (rustup installs the toolchain and both WASM targets
+# that rust-toolchain.toml pins on first use)
 cargo install wasm-pack
 cargo install cargo-component
-rustup target add wasm32-unknown-unknown wasm32-wasip1
 
 # build all WASM targets
 deno task build:wasm

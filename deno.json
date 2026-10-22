@@ -13,7 +13,7 @@
 		"clean": "cargo clean && rm -rf crates/blake3_wasm/pkg crates/blake3_wasm_small/pkg pkg && rm -rf benches/results",
 		"typecheck": "cargo check --workspace",
 		"test:rust": "cargo test --workspace",
-		"lint": "cargo clippy --workspace",
+		"lint": "cargo clippy --workspace --all-targets -- -D warnings",
 		"check": "deno task typecheck && deno task test:rust && deno task lint && cargo fmt --all --check && tsv format --check .",
 		"format": "cargo fmt --all && tsv format .",
 

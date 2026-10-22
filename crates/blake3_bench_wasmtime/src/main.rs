@@ -142,7 +142,7 @@ fn insert_commas(s: &str) -> String {
 }
 
 /// Compute median of a sorted slice.
-fn median_sorted(s: &[f64]) -> f64 {
+const fn median_sorted(s: &[f64]) -> f64 {
     let n = s.len();
     if n == 0 {
         return 0.0;
@@ -165,7 +165,10 @@ fn percentile_sorted(s: &[f64], p: f64) -> f64 {
     let lo = h.floor() as usize;
     let hi = (lo + 1).min(n - 1);
     let frac = h - lo as f64;
-    s[lo] + frac * (s[hi] - s[lo])
+    // not `mul_add`: R-7 as written rounds the product before the addition
+    #[allow(clippy::suboptimal_flops)]
+    let value = s[lo] + frac * (s[hi] - s[lo]);
+    value
 }
 
 /// MAD-based outlier removal matching `fuz_util`'s `stats_outliers_mad`.

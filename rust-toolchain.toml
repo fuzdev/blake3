@@ -1,0 +1,8 @@
+# Pinned because clippy's nursery lints are warn-level and `deno task lint`
+# denies warnings — a floating toolchain would break the build on new lints. It
+# also holds the WASM sizes `validate:size` checks steady. Bump deliberately.
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]
+# wasm-pack builds for wasm32-unknown-unknown, cargo-component for wasm32-wasip1
+targets = ["wasm32-unknown-unknown", "wasm32-wasip1"]
