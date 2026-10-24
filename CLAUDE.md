@@ -264,6 +264,13 @@ cargo run -p blake3_debug -- test-vectors > test/test_vectors.json
 
 Both `scripts/compare.ts` and benchmarks load from this shared file. Regenerate after changing test inputs in `blake3_debug/src/main.rs`.
 
+The digests come from the native `blake3` crate (the reference Rust implementation, at the
+version in `Cargo.lock`). Besides `hello` and a single byte, the inputs follow the official BLAKE3
+test-vector convention: byte `i` is `i % 251`, keyed with `whats the Elvish word for friend` and
+derived under `BLAKE3 2019-12-27 16:29:52 test vectors context`, at lengths around the block
+(64-byte) and chunk (1024-byte) boundaries. At the lengths the official set covers, each digest
+is the first 32 bytes of the official vector's extended output.
+
 ## Benchmarks
 
 See `benches/CLAUDE.md` for detailed benchmark docs, WASM boundary crossing analysis,

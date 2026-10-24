@@ -845,7 +845,10 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
     eprintln!();
     eprintln!("=== finalize_and_reset ===");
     {
-        let v = &vectors[1]; // "hello" vector
+        let v = vectors
+            .iter()
+            .find(|v| v.label == "hello")
+            .unwrap_or_else(|| panic!("no \"hello\" vector in test_vectors.json"));
         let input = hex_to_bytes(&v.input_hex);
         let hasher = hashing
             .hasher()
