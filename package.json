@@ -47,7 +47,7 @@
     "publish": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/publish.ts"
   },
   "devDependencies": {
-    "@fuzdev/fuz_util": "^0.81.0",
+    "@fuzdev/fuz_util": "^0.82.0",
     "@types/node": "^24.10.1",
     "blake3-wasm": "^2.1.5"
   }

@@ -1,17 +1,13 @@
 /**
- * Configures `st` from `@fuzdev/fuz_util/print.ts` with `node:util`'s `styleText`.
- *
- * Re-exports `st` for use across benchmark modules.
+ * ANSI styling for the benchmark modules: `node:util`'s `styleText` as `st`,
+ * and the runtime colors for bar charts.
  */
 
 import { styleText } from 'node:util';
-import { configure_print_colors, st } from '@fuzdev/fuz_util/print.ts';
-
-configure_print_colors(styleText);
-
-export { st };
 
 type Format = Parameters<typeof styleText>[0];
+
+export const st = styleText;
 
 /** Fixed runtime → format mapping for bar charts. */
 const RUNTIME_FORMATS: Record<string, Format> = {

@@ -78,7 +78,7 @@ blake3/
 │   │   └── report.md              # Latest cross-runtime report (committed)
 │   ├── lib/
 │   │   ├── bench_core.ts          # Shared engine (make_runners, run_benchmarks)
-│   │   └── color.ts               # ANSI styling (configures st from @fuzdev/fuz_util/print)
+│   │   └── color.ts               # ANSI styling (st is node:util styleText)
 │   ├── deno/
 │   │   └── bench.ts               # Deno benchmark entry point
 │   └── node/
