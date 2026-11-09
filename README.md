@@ -26,7 +26,7 @@ See [benchmarks](#benchmarks) for details
 [@connor4312/blake3](https://github.com/connor4312/blake3),
 `blake3-wasm` on npm).
 
-Also available via `npm:` specifier in Deno (jsr coming soon, user requests will speed it up):
+Also available via `npm:` specifier in Deno:
 
 ```ts
 import { hash } from 'npm:@fuzdev/blake3-wasm';
@@ -241,15 +241,15 @@ cargo install wasm-pack
 cargo install cargo-component
 
 # build all WASM targets
-deno task build:wasm
+npm run build:wasm
 
 # or build individual targets
-deno task build:wasm:deno      # build for Deno (+ deno compile patch)
-deno task build:wasm:web       # build for web/Node (+ npm package)
+npm run build:wasm:deno        # build for Deno (+ deno compile patch)
+npm run build:wasm:web         # build for web/Node (+ npm package)
 ```
 
 [`cargo-component`](https://github.com/bytecodealliance/cargo-component) and `wasm32-wasip1`
-are only needed for WASI component builds and Wasmtime benchmarks (`deno task bench`).
+are only needed for WASI component builds and Wasmtime benchmarks (`npm run bench`).
 
 The Deno build patches wasm-bindgen's `fetch()` to `Deno.readFileSync()` for
 [`deno compile`](https://docs.deno.com/runtime/reference/cli/compile/) compatibility.
@@ -264,11 +264,11 @@ deno compile --allow-read --include=path/to/pkg/deno my_script.ts
 ```bash
 npm i                          # install dev dependencies (benchmark comparison)
 cargo check --workspace        # fast typecheck
-deno task check                # full check (typecheck + test:rust + clippy + fmt)
-deno task compare              # build + correctness: all builds vs test vectors
-deno task test                 # all correctness tests (requires built artifacts)
-deno task validate             # everything: check + build + test + validate:*
-deno task bench                # performance: cross-runtime benchmarks
+npm run check                  # full check (typecheck + test:rust + clippy + fmt)
+npm run compare                # build + correctness: all builds vs test vectors
+npm run test                   # all correctness tests (requires built artifacts)
+npm run validate               # everything: check + build + test + validate:*
+npm run bench                  # performance: cross-runtime benchmarks
 ```
 
 ## Benchmarks
@@ -277,9 +277,9 @@ One snapshot of cross-runtime results (Deno, Node, Bun, Wasmtime) is in
 [benches/results/report.md](benches/results/report.md).
 
 ```bash
-deno task bench                # full pipeline: build + all runtimes + report
-deno task bench:deno           # Deno only
-deno task bench:report         # regenerate report from existing results
+npm run bench                  # full pipeline: build + all runtimes + report
+npm run bench:deno             # Deno only
+npm run bench:report           # regenerate report from existing results
 ```
 
 ## Publish
@@ -289,8 +289,8 @@ Prerequisite: `npm i -g @changesets/cli`
 
 ```bash
 changeset                      # add a changeset
-deno task publish              # dry-run
-deno task publish --wetrun     # version + check + build + validate + publish
+npm run publish                # dry-run
+npm run publish -- --wetrun    # version + check + build + validate + publish
 ```
 
 ## Contributing

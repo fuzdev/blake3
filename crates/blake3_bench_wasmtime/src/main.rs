@@ -686,7 +686,7 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
     let path = Path::new(wasm_path);
     assert!(
         path.exists(),
-        "Component not built: {wasm_path}\nRun: deno task build:component"
+        "Component not built: {wasm_path}\nRun: npm run build:component"
     );
 
     let component = wasmtime::component::Component::from_file(engine, path)

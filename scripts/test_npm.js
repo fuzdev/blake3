@@ -12,7 +12,7 @@
  *   PKG_DIR=crates/blake3_wasm/pkg/web node --test scripts/test_npm.js
  *   PKG_DIR=crates/blake3_wasm_small/pkg/web node --test scripts/test_npm.js
  *
- * Prerequisites: deno task build:wasm:web (or build:wasm:small:web)
+ * Prerequisites: npm run build:wasm:web (or build:wasm:small:web)
  */
 
 import { describe, it } from 'node:test';

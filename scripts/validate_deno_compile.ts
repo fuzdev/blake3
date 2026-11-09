@@ -6,9 +6,9 @@
  * blake3_wasm and blake3_wasm_small: compile a minimal script that imports the
  * package, run the compiled binary, and check it produces the correct hash.
  *
- * Usage: deno task validate:compile
+ * Usage: npm run validate:compile
  *
- * Prerequisites: deno task build:wasm
+ * Prerequisites: npm run build:wasm
  *
  * @module
  */
@@ -42,7 +42,7 @@ function test_compile(label: string, pkg_dir: string): boolean {
 		Deno.statSync(pkg_dir);
 	} catch (error) {
 		if (!(error instanceof Deno.errors.NotFound)) throw error;
-		console.log(`SKIP: ${label} deno build not found — run deno task build:wasm first`);
+		console.log(`SKIP: ${label} deno build not found — run npm run build:wasm first`);
 		return true;
 	}
 

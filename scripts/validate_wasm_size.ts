@@ -4,7 +4,7 @@
  * Catches binary size regressions from toolchain updates, dependency changes,
  * or build configuration drift. Only checks files that exist (skips unbuilt targets).
  *
- * Usage: deno task validate:size
+ * Usage: npm run validate:size
  *
  * @module
  */

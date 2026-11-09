@@ -8,7 +8,7 @@
  * Only checks non-timestamped files (e.g. wasmtime.json, deno.json)
  * since those are the fixed-name outputs used by the report.
  *
- * Usage: deno task validate:bench
+ * Usage: npm run validate:bench
  */
 
 import process from 'node:process';

@@ -5,8 +5,8 @@
  * Pass `--wetrun` to bump version, build, validate, and publish to npm.
  *
  * Usage:
- *   deno task publish              # dry-run (validate everything, no version bump)
- *   deno task publish --wetrun     # changeset version + sync + check + build + validate + publish
+ *   npm run publish                # dry-run (validate everything, no version bump)
+ *   npm run publish -- --wetrun    # changeset version + sync + check + build + validate + publish
  *
  * @module
  */
@@ -24,15 +24,7 @@ const web_packages = [
 
 /** The files a release mutates (changeset version + the version syncs). A scoped
  * `git add` keeps stray working-tree changes out of the release commit. */
-const release_files = [
-	'package.json',
-	'CHANGELOG.md',
-	'Cargo.toml',
-	'Cargo.lock',
-	'crates/blake3_wasm/jsr.json',
-	'crates/blake3_wasm_small/jsr.json',
-	'.changeset'
-];
+const release_files = ['package.json', 'CHANGELOG.md', 'Cargo.toml', 'Cargo.lock', '.changeset'];
 
 console.log(`\n=== blake3 publish ${wetrun ? '(wetrun)' : '(dry-run)'} ===\n`);
 
@@ -149,7 +141,7 @@ if (wetrun) {
 			);
 			console.error(`  package.json is at v${version_before}. To resume from this version:`);
 			console.error(`    echo "${version_before}" > ${SENTINEL_PATH}`);
-			console.error('    deno task publish --wetrun');
+			console.error('    npm run publish -- --wetrun');
 			console.error('  To start fresh: git checkout . && changeset');
 			Deno.exit(1);
 		}
@@ -203,41 +195,15 @@ if (wetrun) {
 	}
 }
 
-const jsr_paths = ['crates/blake3_wasm/jsr.json', 'crates/blake3_wasm_small/jsr.json'];
-for (const jsr_path of jsr_paths) {
-	const jsr_text = Deno.readTextFileSync(jsr_path);
-	const jsr = JSON.parse(jsr_text);
-	if (wetrun) {
-		if (jsr.version === version) {
-			console.log(`  ${jsr_path} already at v${version}`);
-		} else {
-			// Targeted replacement to preserve original file formatting
-			const jsr_updated = jsr_text.replace(/("version"\s*:\s*)"[^"]*"/, `$1"${version}"`);
-			if (jsr_updated === jsr_text) {
-				console.error(`  FAIL: could not find version field in ${jsr_path}`);
-				Deno.exit(1);
-			}
-			Deno.writeTextFileSync(jsr_path, jsr_updated);
-			console.log(`  Synced ${jsr_path} to v${version}`);
-		}
-	} else {
-		if (jsr.version === version) {
-			console.log(`  ${jsr_path}: v${version} (ok)`);
-		} else {
-			console.warn(`  WARN: ${jsr_path} at v${jsr.version}, wetrun would sync to v${version}`);
-		}
-	}
-}
-
 // Step 4: Check
 
 console.log('\n=== Step 4: Check (typecheck + test + clippy + cargo fmt + tsv format) ===');
-run('deno task check', 'deno', ['task', 'check']);
+run('npm run check', 'npm', ['run', 'check']);
 
 // Step 5: Build
 
 console.log('\n=== Step 5: Build WASM (all targets) ===');
-run('deno task build:wasm', 'deno', ['task', 'build:wasm']);
+run('npm run build:wasm', 'npm', ['run', 'build:wasm']);
 
 // Step 6: Verify built package names and versions
 
@@ -261,8 +227,8 @@ for (const { label, dir } of web_packages) {
 // Step 7: Validate
 
 console.log('\n=== Step 7: Validate npm packages + WASM sizes + correctness ===');
-run('deno task validate:npm', 'deno', ['task', 'validate:npm']);
-run('deno task validate:size', 'deno', ['task', 'validate:size']);
+run('npm run validate:npm', 'npm', ['run', 'validate:npm']);
+run('npm run validate:size', 'npm', ['run', 'validate:size']);
 // Run correctness tests directly (WASM already built in Step 5 — skip the rebuild sub-tasks).
 // Note: test:component (WASI component) is intentionally omitted — the component is not published.
 run('test:deno (blake3_wasm)', 'deno', ['test', '--allow-read', 'scripts/compare.ts']);
@@ -273,7 +239,7 @@ run('test:deno:small (blake3_wasm_small)', 'deno', [
 	'--',
 	'--small'
 ]);
-run('deno task validate:compile', 'deno', ['task', 'validate:compile']);
+run('npm run validate:compile', 'npm', ['run', 'validate:compile']);
 
 // Step 8: Publish
 
@@ -291,7 +257,7 @@ for (let i = 0; i < web_packages.length; i++) {
 		}
 		console.log(`  Publishing ${label}...`);
 		const not_published = web_packages.slice(i);
-		const fail_hint = `  Packages not published — re-run \`deno task publish --wetrun\` to retry, or publish manually:\n${not_published
+		const fail_hint = `  Packages not published — re-run \`npm run publish -- --wetrun\` to retry, or publish manually:\n${not_published
 			.map((p) => `    cd ${p.dir} && npm publish --access public`)
 			.join('\n')}`;
 		run(`npm publish ${label}`, 'npm', ['publish', '--access', 'public'], dir, fail_hint);

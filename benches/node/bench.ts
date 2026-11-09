@@ -3,8 +3,8 @@
  *
  * Benchmarks blake3_wasm + blake3_wasm_small + npm:blake3-wasm.
  *
- * Run with: deno task bench:node
- *   or:     deno task bench:bun
+ * Run with: npm run bench:node
+ *   or:     npm run bench:bun
  *
  * Environment variables:
  *   BENCH_DURATION   Duration per benchmark in ms (default: 3000)

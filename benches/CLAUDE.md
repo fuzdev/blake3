@@ -5,32 +5,29 @@ Cross-runtime BLAKE3 benchmark suite covering Deno, Node.js, Bun, and Wasmtime.
 ## Quick Start
 
 ```bash
-deno task bench                    # Full pipeline: build + all runtimes + report
-deno task bench:deno               # Deno only
-deno task bench:node               # Node.js only
-deno task bench:bun                # Bun only
-deno task bench:wasmtime           # Wasmtime component model only
-deno task bench:report             # Generate cross-runtime comparison report
-deno task bench:diff               # Regression detection between two result files
+npm run bench                      # Full pipeline: build + all runtimes + report
+npm run bench:deno                 # Deno only
+npm run bench:node                 # Node.js only
+npm run bench:bun                  # Bun only
+npm run bench:wasmtime             # Wasmtime component model only
+npm run bench:report               # Generate cross-runtime comparison report
+npm run bench:diff                 # Regression detection between two result files
 ```
 
 ## Structure
 
 ```
 benches/
-├── deno.json                      # Imports (@fuzdev/fuz_util)
 ├── report.ts                      # Cross-runtime report generator
 ├── diff.ts                        # Regression detection (Welch's t-test, Cohen's d)
-├── results/                       # Output (gitignored)
+├── results/                       # Output (json/md gitignored except report.md)
 │   ├── {runtime}.json             # Latest results (for report)
 │   ├── {ts}_{runtime}_{commit}.{json,md}  # Timestamped history
 │   └── report.md                  # Latest cross-runtime report
 ├── lib/
-│   ├── deno.json                  # Imports (@fuzdev/fuz_util)
 │   ├── bench_core.ts              # Shared engine (make_runners, run_benchmarks)
 │   └── color.ts                   # ANSI styling
 ├── deno/
-│   ├── deno.json                  # Imports (@fuzdev/fuz_util)
 │   └── bench.ts                   # Deno benchmark entry point
 └── node/
     └── bench.ts                   # Node.js / Bun benchmark entry point
@@ -47,7 +44,7 @@ Wasmtime benchmarks live in `crates/blake3_bench_wasmtime/` (Rust binary).
 | `BENCH_OUTPUT`   | `benches/results/{rt}.json` | JSON output path                     |
 | `BENCH_RUNTIME`  | `Node.js`                   | Runtime label (node/bench.ts only)   |
 
-Quick iterations: `BENCH_DURATION=1000 deno task bench:deno`
+Quick iterations: `BENCH_DURATION=1000 npm run bench:deno`
 
 ## Architecture
 

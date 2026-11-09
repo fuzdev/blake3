@@ -5,10 +5,10 @@
  * with statistical significance testing.
  *
  * Usage:
- *   deno task bench:diff                              # auto-detect latest two runs
- *   deno task bench:diff results/a.json results/b.json  # explicit files
- *   deno task bench:diff --threshold 10               # custom regression threshold (%)
- *   deno task bench:diff --runtime deno                # filter to a specific runtime
+ *   npm run bench:diff                                   # auto-detect latest two runs
+ *   npm run bench:diff -- results/a.json results/b.json  # explicit files
+ *   npm run bench:diff -- --threshold 10                 # custom regression threshold (%)
+ *   npm run bench:diff -- --runtime deno                 # filter to a specific runtime
  *
  * Exit code 1 if any statistically significant regressions exceed the threshold.
  */

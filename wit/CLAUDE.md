@@ -50,4 +50,4 @@ Key sections for WIT:
 - **Build:** `cargo component build -p blake3_component --release`
 - **Rust bindings:** `wasmtime::component::bindgen!` in `crates/blake3_bench_wasmtime/`
 - **Implementation:** `crates/blake3_component/src/lib.rs` via `wit-bindgen`
-- **Correctness:** `deno task compare:component` (verifies all operations + error paths via Wasmtime)
+- **Correctness:** `npm run compare:component` (verifies all operations + error paths via Wasmtime)

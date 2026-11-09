@@ -1,4 +1,4 @@
-# Pinned because clippy's nursery lints are warn-level and `deno task lint`
+# Pinned because clippy's nursery lints are warn-level and `npm run lint`
 # denies warnings — a floating toolchain would break the build on new lints. It
 # also holds the WASM sizes `validate:size` checks steady. Bump deliberately.
 [toolchain]

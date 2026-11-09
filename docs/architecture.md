@@ -74,13 +74,13 @@ crates/blake3_wasm_core/
 crates/blake3_wasm/
 ├── types.ts          # Re-export from blake3_wasm_core
 ├── stream.ts         # Re-export from blake3_wasm_core
-├── mod.ts            # @fuzdev/blake3-wasm → pkg/deno/
+├── mod.ts            # internal Deno entry → pkg/deno/
 └── mod_node.ts       # @fuzdev/blake3-wasm → pkg/web/ (node:fs + init_sync)
 
 crates/blake3_wasm_small/
 ├── types.ts          # Re-export from blake3_wasm_core
 ├── stream.ts         # Re-export from blake3_wasm_core
-├── mod.ts            # @fuzdev/blake3-wasm-small → pkg/deno/
+├── mod.ts            # internal Deno entry → pkg/deno/
 └── mod_node.ts       # @fuzdev/blake3-wasm-small → pkg/web/ (node:fs + init_sync)
 ```
 
@@ -132,17 +132,17 @@ Wasmtime benchmarks the component via the WASI component model (hash, keyed_hash
 
 ### Pipeline
 
-`deno task bench` chains: `bench:build` → `bench:deno` → `bench:node` → `bench:bun` → `bench:wasmtime:run` → `bench:report` → `validate:bench`
+`npm run bench` chains: `bench:build` → `bench:deno` → `bench:node` → `bench:bun` → `bench:wasmtime:run` → `bench:report` → `validate:bench`
 
 Each entry point writes structured JSON to `benches/results/{runtime}.json` plus timestamped history files (`{timestamp}_{runtime}_{commit}.{json,md}`). The report auto-discovers the latest JSON files and produces a cross-runtime comparison with throughput, SIMD speedup table, and WASM binary sizes.
 
 ### Result Validation
 
-`deno task validate:bench` validates all non-timestamped `benches/results/*.json` files against the `BenchSuiteResult` schema. This catches drift between the Rust structs (`blake3_bench_wasmtime`) and the TS interfaces (`benches/lib/bench_core.ts`).
+`npm run validate:bench` validates all non-timestamped `benches/results/*.json` files against the `BenchSuiteResult` schema. This catches drift between the Rust structs (`blake3_bench_wasmtime`) and the TS interfaces (`benches/lib/bench_core.ts`).
 
 ## Tooling
 
-- **`scripts/compare.ts`** — Correctness: `Deno.test` suite verifying wasm-bindgen output against native blake3 test vectors, including stream batch boundary tests and error path tests for invalid key length. Supports `--small` flag to test blake3_wasm_small instead of blake3_wasm. Run via `deno task test:deno` / `test:deno:small`.
+- **`scripts/compare.ts`** — Correctness: `Deno.test` suite verifying wasm-bindgen output against native blake3 test vectors, including stream batch boundary tests and error path tests for invalid key length. Supports `--small` flag to test blake3_wasm_small instead of blake3_wasm. Run via `npm run test:deno` / `test:deno:small`.
 - **`scripts/build_wasm.ts`** — Parallel WASM build orchestrator: runs blake3_wasm and blake3_wasm_small builds concurrently (deno→web sequential within each package).
 - **`scripts/test_npm.js`** — Node.js tests for npm packages (index.js + browser.js init-guard tests). `PKG_DIR` env var selects the package to test.
 - **`scripts/validate_bench_results.ts`** — Schema validation: checks bench result JSON against `BenchSuiteResult` structure to catch Rust/TS drift.

@@ -7,9 +7,9 @@ are Deno TypeScript (except `test_npm.js` which runs in Node.js).
 
 ### Build
 
-| Script          | Task                   | Purpose                                                                                                                             |
-| --------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `build_wasm.ts` | `deno task build:wasm` | Parallel WASM build orchestrator — runs blake3_wasm and blake3_wasm_small concurrently, deno + web targets sequentially within each |
+| Script          | Task                 | Purpose                                                                                                                             |
+| --------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `build_wasm.ts` | `npm run build:wasm` | Parallel WASM build orchestrator — runs blake3_wasm and blake3_wasm_small concurrently, deno + web targets sequentially within each |
 
 ### Post-Build Patches
 
@@ -20,24 +20,24 @@ are Deno TypeScript (except `test_npm.js` which runs in Node.js).
 
 ### Correctness
 
-| Script        | Task                                      | Purpose                                                                                                                                                          |
-| ------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `compare.ts`  | `deno task test:deno` / `test:deno:small` | Deno.test suite verifying hash, keyed_hash, derive_key, streaming, stream functions (incl. batch boundaries), and error paths against native blake3 test vectors |
-| `test_npm.js` | `deno task test:npm` / `test:npm:small`   | Node.js test runner (`node --test`) for the built `pkg/web/` — tests both `index.js` (auto-init) and `browser.js` (init guard) entries                           |
+| Script        | Task                                    | Purpose                                                                                                                                                          |
+| ------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compare.ts`  | `npm run test:deno` / `test:deno:small` | Deno.test suite verifying hash, keyed_hash, derive_key, streaming, stream functions (incl. batch boundaries), and error paths against native blake3 test vectors |
+| `test_npm.js` | `npm run test:npm` / `test:npm:small`   | Node.js test runner (`node --test`) for the built `pkg/web/` — tests both `index.js` (auto-init) and `browser.js` (init guard) entries                           |
 
 ### Validation
 
-| Script                      | Task                         | Purpose                                                                                                                                                     |
-| --------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `validate_wasm_size.ts`     | `deno task validate:size`    | WASM binary size regression checks (±10 KB tolerance), SIMD vs small relative size check, npm package structure verification                                |
-| `validate_deno_compile.ts`  | `deno task validate:compile` | Smoke test for both blake3_wasm and blake3_wasm_small: compiles a minimal script with `deno compile --include`, runs the binary, checks correct hash output |
-| `validate_bench_results.ts` | `deno task validate:bench`   | Schema validation for bench JSON output — catches Rust/TS struct drift                                                                                      |
+| Script                      | Task                       | Purpose                                                                                                                                                     |
+| --------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `validate_wasm_size.ts`     | `npm run validate:size`    | WASM binary size regression checks (±10 KB tolerance), SIMD vs small relative size check, npm package structure verification                                |
+| `validate_deno_compile.ts`  | `npm run validate:compile` | Smoke test for both blake3_wasm and blake3_wasm_small: compiles a minimal script with `deno compile --include`, runs the binary, checks correct hash output |
+| `validate_bench_results.ts` | `npm run validate:bench`   | Schema validation for bench JSON output — catches Rust/TS struct drift                                                                                      |
 
 ### Publishing
 
-| Script       | Task                | Purpose                                                                                                                                                                                    |
-| ------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `publish.ts` | `deno task publish` | Unified publish pipeline: preflight → changeset version → version sync (Cargo.toml, jsr.json) → check → build → verify → validate → npm publish. Dry-run by default, `--wetrun` to publish |
+| Script       | Task              | Purpose                                                                                                                                                                                    |
+| ------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `publish.ts` | `npm run publish` | Unified publish pipeline: preflight → changeset version → version sync (Cargo.toml) → check → build → verify → validate → npm publish. Dry-run by default, `--wetrun` to publish |
 
 ## Conventions
 

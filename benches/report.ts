@@ -4,8 +4,8 @@
  * Auto-discovers JSON results from benches/results/ and produces
  * a side-by-side comparison with ratio annotations and visual bars.
  *
- * Run with: deno task bench:report
- *   or:     deno task bench:report:md  (markdown output)
+ * Run with: npm run bench:report
+ *   or:     npm run bench:report:md  (markdown output)
  *
  * Flags:
  *   --markdown   Output markdown instead of text
@@ -1106,7 +1106,15 @@ writeFileSync(history_path, md);
 // Align the generated markdown tables (deno fmt — tsv does not format markdown)
 try {
 	new Deno.Command('deno', {
-		args: ['fmt', `${results_dir}/report.md`, history_path],
+		args: [
+			'fmt',
+			'--use-tabs',
+			'--line-width=100',
+			'--single-quote',
+			'--prose-wrap=preserve',
+			`${results_dir}/report.md`,
+			history_path
+		],
 		stdout: 'null',
 		stderr: 'null'
 	}).outputSync();
