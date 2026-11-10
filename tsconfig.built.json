@@ -1,0 +1,12 @@
+{
+	// the whole TypeScript surface, including what imports wasm-pack's output; needs `npm run build:wasm`
+	"extends": "./tsconfig.json",
+	"include": [
+		"scripts/**/*.ts",
+		"benches/**/*.ts",
+		"crates/blake3_wasm_core/*.ts",
+		"crates/blake3_wasm/mod.ts",
+		"crates/blake3_wasm_small/mod.ts"
+	],
+	"exclude": []
+}

@@ -12,20 +12,25 @@ npm run bench:bun                  # Bun only
 npm run bench:wasmtime             # Wasmtime component model only
 npm run bench:report               # Generate cross-runtime comparison report
 npm run bench:diff                 # Regression detection between two result files
+npm run bench:diff -- --threshold 10 --runtime deno   # flags go after `--`
 ```
 
 ## Structure
 
 ```
 benches/
-├── report.ts                      # Cross-runtime report generator
-├── diff.ts                        # Regression detection (Welch's t-test, Cohen's d)
+├── report.task.ts                 # Cross-runtime report generator (gro task)
+├── diff.task.ts                   # Regression detection (gro task; Welch's t-test, Cohen's d)
 ├── results/                       # Output (json/md gitignored except report.md)
 │   ├── {runtime}.json             # Latest results (for report)
 │   ├── {ts}_{runtime}_{commit}.{json,md}  # Timestamped history
 │   └── report.md                  # Latest cross-runtime report
 ├── lib/
 │   ├── bench_core.ts              # Shared engine (make_runners, run_benchmarks)
+│   ├── bench_result.ts            # Result types + shared formatting (pure)
+│   ├── report.ts                  # Report rendering (pure)
+│   ├── diff.ts                    # Diff rendering (pure)
+│   ├── markdown_table.ts          # Markdown table alignment
 │   └── color.ts                   # ANSI styling
 ├── deno/
 │   └── bench.ts                   # Deno benchmark entry point
@@ -56,6 +61,19 @@ benchmarks at 4 sizes (32B, 1KB, 64KB, 1MB), streaming benchmarks at 3 sizes wit
 stream convenience function benchmarks (hash_stream, keyed_hash_stream, derive_key_stream),
 JSON + markdown output with timestamped history.
 
+The harness and the entry points run under Node.js, Bun, and Deno, so they reach the system
+through `node:*` modules, which all three support. The result types and the formatting the report
+shares with the harness live in `lib/bench_result.ts`, which does no I/O.
+
+### Entry points
+
+All three JS runtimes load our builds through the same web-target entries
+(`crates/<crate>/mod.ts`: wasm-pack's web glue, `initSync` over the `.wasm` read with
+`node:fs`), so they run identical WASM bytes and identical glue. Instantiation is synchronous and
+happens once at import, outside every measurement. The npm reference loads its CJS Node build on
+Node.js and Bun (`blake3-wasm`) and its browser build on Deno (`blake3-wasm/browser-async.js`),
+which are separate WASM binaries.
+
 ### Runners
 
 JS runtimes benchmark 3 implementations:
@@ -66,23 +84,28 @@ JS runtimes benchmark 3 implementations:
 
 Wasmtime benchmarks the component model build.
 
-### Report (`report.ts`)
+### Report (`report.task.ts`)
 
 Auto-discovers `results/*.json`, produces cross-runtime comparison with throughput, confidence
 intervals, SIMD speedup table, and WASM binary sizes. History files are saved alongside.
+The rendering (`lib/report.ts`) is pure and aligns its own markdown tables
+(`lib/markdown_table.ts`), so the saved report needs no markdown formatter.
 
-### Diff (`diff.ts`)
+### Diff (`diff.task.ts`)
 
 Compares two result files for regressions. Uses Welch's t-test for statistical significance
-and Cohen's d for effect size. Auto-detects latest two timestamped files or accepts explicit paths.
+and Cohen's d for effect size. Auto-detects the latest two timestamped files (`--runtime` limits
+them to one runtime) or takes two paths, base then current
+(`npm run bench:diff -- benches/results/a.json benches/results/b.json`). `--threshold` sets
+the regression threshold in percent (default 5). Exits 1 on a significant regression.
 
 ## Comparison Caveats
 
 - **npm:blake3-wasm keyed_hash/derive_key** use the streaming API internally (3 wasm boundary
   crossings) vs our one-shot exports (1 call). Explains the large gap at small sizes — real-world
   API design difference, not an algorithm difference.
-- **Deno** has ~5-9x higher per-call WASM overhead at small inputs vs Node.js (up to ~8x for hash at 32B). The wasm-bindgen
-  glue code is identical — this is a Deno runtime characteristic. The gap narrows at large sizes.
+- **Deno** has ~5-9x higher per-call WASM overhead at small inputs vs Node.js (up to ~8x for hash at 32B). The WASM
+  and its glue are identical — this is a Deno runtime characteristic. The gap narrows at large sizes.
 - **Bun** has a WASM SIMD regression — blake3_wasm (SIMD) is 1.6-2.6x slower than
   blake3_wasm_small (no SIMD) on Bun (worst range 512B–3KB: ~2.3–2.6x, 32B: ~1.6x,
   64KB+: ~1.44x; 4KB is a notable transition — BLAKE3's 4-chunk parallelism partially

@@ -232,39 +232,32 @@ See [docs/architecture.md](docs/architecture.md) for crate structure, build pipe
 
 ## Building from source
 
-Requires [Rust](https://rustup.rs/) and [Deno](https://deno.land/).
+Requires [Rust](https://rustup.rs/) and [Node.js](https://nodejs.org/).
 
 ```bash
 # prerequisites (rustup installs the toolchain and both WASM targets
 # that rust-toolchain.toml pins on first use)
 cargo install wasm-pack
 cargo install cargo-component
+npm i                          # dev dependencies: gro (runs the tooling), tsv, TypeScript, the benchmark reference
 
-# build all WASM targets
+# build both packages
 npm run build:wasm
 
-# or build individual targets
-npm run build:wasm:deno        # build for Deno (+ deno compile patch)
-npm run build:wasm:web         # build for web/Node (+ npm package)
+# or build one
+npm run build:wasm:simd        # @fuzdev/blake3-wasm
+npm run build:wasm:small       # @fuzdev/blake3-wasm-small
 ```
 
 [`cargo-component`](https://github.com/bytecodealliance/cargo-component) and `wasm32-wasip1`
-are only needed for WASI component builds and Wasmtime benchmarks (`npm run bench`).
-
-The Deno build patches wasm-bindgen's `fetch()` to `Deno.readFileSync()` for
-[`deno compile`](https://docs.deno.com/runtime/reference/cli/compile/) compatibility.
-Include the `pkg/deno/` directory via `--include` so the WASM binary is embedded:
-
-```bash
-deno compile --allow-read --include=path/to/pkg/deno my_script.ts
-```
+are only needed for WASI component builds and Wasmtime benchmarks (`npm run bench`),
+and [Deno](https://deno.com/) and [Bun](https://bun.sh/) only for their benchmark rows.
 
 ## Development
 
 ```bash
-npm i                          # install dev dependencies (benchmark comparison)
-cargo check --workspace        # fast typecheck
-npm run check                  # full check (typecheck + test:rust + clippy + fmt)
+cargo check --workspace        # fast Rust typecheck
+npm run check                  # full check (typecheck + test:rust + test:tooling + clippy + fmt)
 npm run compare                # build + correctness: all builds vs test vectors
 npm run test                   # all correctness tests (requires built artifacts)
 npm run validate               # everything: check + build + test + validate:*
@@ -289,8 +282,8 @@ Prerequisite: `npm i -g @changesets/cli`
 
 ```bash
 changeset                      # add a changeset
-npm run publish                # dry-run
-npm run publish -- --wetrun    # version + check + build + validate + publish
+npm run release                # dry-run
+npm run release -- --wetrun    # version + check + build + validate + publish
 ```
 
 ## Contributing

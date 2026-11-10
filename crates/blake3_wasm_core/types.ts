@@ -1,5 +1,3 @@
-export type { StreamFunctions } from './stream.ts';
-
 /** Streaming BLAKE3 hasher instance. */
 export interface Blake3HasherInstance {
 	/** Feed data into the hasher. May be called multiple times. */

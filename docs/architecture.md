@@ -36,17 +36,15 @@ Six Rust crates. `blake3_wasm_core` is an rlib with a `simd` feature that enable
 ```
 Rust (blake3_wasm_core with simd feature)
     → blake3_wasm (pub use core::*)
-    → wasm-pack build --target {deno,web}
-    → crates/blake3_wasm/pkg/{deno,web}/
-    → mod.ts (Deno entry, pkg/deno/)
-    → mod_node.ts (Node entry, pkg/web/ + init_sync)
+    → wasm-pack build --target web
+    → crates/blake3_wasm/pkg/ (+ npm package files from scripts/patch_npm_package.task.ts)
+    → mod.ts (internal entry, pkg/ + initSync)
 
 Rust (blake3_wasm_core without simd)
     → blake3_wasm_small (pub use core::*)
-    → wasm-pack build --target {deno,web}
-    → crates/blake3_wasm_small/pkg/{deno,web}/
-    → mod.ts (Deno entry, pkg/deno/)
-    → mod_node.ts (Node entry, pkg/web/ + init_sync)
+    → wasm-pack build --target web
+    → crates/blake3_wasm_small/pkg/ (+ npm package files)
+    → mod.ts (internal entry, pkg/ + initSync)
 
     → cargo component build -p blake3_component
     → pkg/component/blake3_component.wasm (WASI component)
@@ -60,11 +58,11 @@ Note: wasm-pack doesn't support `--profile` (conflicts with `--release`), so RUS
 
 ## Package Entry Points
 
-Deno and Node.js entry points import from `pkg/deno/` and `pkg/web/` respectively. Both share `types.ts` (re-exported from `blake3_wasm_core/types.ts`) for the `Blake3HasherInstance` interface. wasm-bindgen's JS glue includes `Symbol.dispose` on `Blake3Hasher` (all targets). `mod_node.ts` uses `node:fs` + wasm-bindgen's `initSync` to load WASM synchronously from the web target — no separate node target needed. Stream convenience functions are built by `make_stream_functions` in `stream.ts` and re-exported from each entry point.
+wasm-pack's web target is the one JS target. Each crate's `mod.ts`, the repo's internal entry for its tests and benchmarks, uses `node:fs` + wasm-bindgen's `initSync` to load the WASM synchronously from `pkg/` — under Node.js, Bun, and Deno alike, which all support `node:fs`, so no separate node or deno target is needed. wasm-bindgen's JS glue includes `Symbol.dispose` on `Blake3Hasher`. Stream convenience functions are built by `make_stream_functions` in `blake3_wasm_core/stream.ts` and exported from each entry point. The published packages' own entries (`index.js`, `browser.js`) are generated; see below.
 
-**Naming convention:** wasm-bindgen generates `initSync` (camelCase) in its JS output (`blake3_wasm.js`). This is a wasm-bindgen convention and cannot be changed without post-processing the generated file. The wrapper files (`index.js`, `browser.js`) re-export as `init_sync` for snake_case consistency with the rest of the API (`hash`, `keyed_hash`, etc.). `mod_node.ts` imports `initSync` internally but does not re-export it — consumers of `mod_node.ts` never see the camelCase name.
+**Naming convention:** wasm-bindgen generates `initSync` (camelCase) in its JS output (`blake3_wasm.js`). This is a wasm-bindgen convention and cannot be changed without post-processing the generated file. The wrapper files (`index.js`, `browser.js`) re-export as `init_sync` for snake_case consistency with the rest of the API (`hash`, `keyed_hash`, etc.). `mod.ts` imports `initSync` internally but does not re-export it — its consumers never see the camelCase name.
 
-For npm packages, `patch_npm_package.ts` generates `stream.js` from `stream.ts` via targeted type stripping (single source of truth — no hand-maintained JS copy). The `browser.js` entry guards all public API including `Blake3Hasher` constructor and static methods with an init check. An npm-specific README is generated with user-facing content only.
+For npm packages, `scripts/patch_npm_package.task.ts` generates `stream.js` from `stream.ts` via targeted type stripping (single source of truth — no hand-maintained JS copy). The `browser.js` entry guards all public API including `Blake3Hasher` constructor and static methods with an init check. An npm-specific README is generated with user-facing content only.
 
 ```
 crates/blake3_wasm_core/
@@ -72,16 +70,12 @@ crates/blake3_wasm_core/
 └── stream.ts         # Source of truth (make_stream_functions)
 
 crates/blake3_wasm/
-├── types.ts          # Re-export from blake3_wasm_core
-├── stream.ts         # Re-export from blake3_wasm_core
-├── mod.ts            # internal Deno entry → pkg/deno/
-└── mod_node.ts       # @fuzdev/blake3-wasm → pkg/web/ (node:fs + init_sync)
+├── mod.ts            # internal entry → pkg/ (node:fs + initSync)
+└── pkg/              # @fuzdev/blake3-wasm (index.js, browser.js, wasm-pack output)
 
 crates/blake3_wasm_small/
-├── types.ts          # Re-export from blake3_wasm_core
-├── stream.ts         # Re-export from blake3_wasm_core
-├── mod.ts            # internal Deno entry → pkg/deno/
-└── mod_node.ts       # @fuzdev/blake3-wasm-small → pkg/web/ (node:fs + init_sync)
+├── mod.ts            # internal entry → pkg/ (node:fs + initSync)
+└── pkg/              # @fuzdev/blake3-wasm-small
 ```
 
 ## Test Vectors
@@ -92,7 +86,7 @@ Shared `test/test_vectors.json`, generated by `blake3_debug`:
 cargo run -p blake3_debug -- test-vectors > test/test_vectors.json
 ```
 
-Loaded by `scripts/compare.ts` (wasm-bindgen correctness) and `blake3_bench_wasmtime --compare` (component model correctness).
+Loaded by `scripts/test_wasm.ts` (wasm-bindgen correctness) and `blake3_bench_wasmtime --compare` (component model correctness).
 
 Digests come from the native `blake3` crate. The patterned entries (`pattern_<len>`) use the
 official BLAKE3 test-vector input (byte `i` is `i % 251`), key, and context, at lengths around the
@@ -106,11 +100,15 @@ and WASM boundary crossing analysis.
 
 ```
 benches/
-├── report.ts            # Cross-runtime comparison (auto-discovers results)
-├── diff.ts              # Regression detection (Welch's t-test, Cohen's d)
+├── report.task.ts       # Cross-runtime comparison (auto-discovers results)
+├── diff.task.ts         # Regression detection (Welch's t-test, Cohen's d)
 ├── lib/
 │   ├── bench_core.ts    # Shared engine: make_runners, make_hasher, run_benchmarks
-│   └── color.ts         # ANSI styling (configures st from @fuzdev/fuz_util/print)
+│   ├── bench_result.ts  # Result types + formatting shared by the harness, report, and diff
+│   ├── report.ts        # Report rendering (pure)
+│   ├── diff.ts          # Diff rendering (pure)
+│   ├── markdown_table.ts # Markdown table alignment for the saved report
+│   └── color.ts         # ANSI styling (st is node:util styleText)
 ├── deno/
 │   └── bench.ts         # Deno entry → benches/results/deno.json
 └── node/
@@ -138,18 +136,21 @@ Each entry point writes structured JSON to `benches/results/{runtime}.json` plus
 
 ### Result Validation
 
-`npm run validate:bench` validates all non-timestamped `benches/results/*.json` files against the `BenchSuiteResult` schema. This catches drift between the Rust structs (`blake3_bench_wasmtime`) and the TS interfaces (`benches/lib/bench_core.ts`).
+`npm run validate:bench` validates all non-timestamped `benches/results/*.json` files against the `BenchSuiteResult` schema. This catches drift between the Rust structs (`blake3_bench_wasmtime`) and the TS interfaces (`benches/lib/bench_result.ts`). It fails when there are no results to validate.
 
 ## Tooling
 
-- **`scripts/compare.ts`** — Correctness: `Deno.test` suite verifying wasm-bindgen output against native blake3 test vectors, including stream batch boundary tests and error path tests for invalid key length. Supports `--small` flag to test blake3_wasm_small instead of blake3_wasm. Run via `npm run test:deno` / `test:deno:small`.
-- **`scripts/build_wasm.ts`** — Parallel WASM build orchestrator: runs blake3_wasm and blake3_wasm_small builds concurrently (deno→web sequential within each package).
+The scripts are gro tasks (`*.task.ts`) on gro's host modules, with their logic in `scripts/lib/` and `benches/lib/` taking handles and programs as parameters; `npm run typecheck` checks them with `tsc` (`tsconfig.json`), and `npm run test` adds, once built, the crates' `mod.ts` and the bench entries, which import wasm-pack's output (`tsconfig.built.json`).
+
+- **`scripts/test_wasm.ts`** — Correctness: `node:test` suite verifying wasm-bindgen output, through a crate's `mod.ts`, against native blake3 test vectors, including stream batch boundary tests and error path tests for invalid key length. The `CRATE_DIR` env var selects blake3_wasm or blake3_wasm_small. Run via `npm run test:wasm` / `test:wasm:small`.
+- **`scripts/build_wasm.task.ts`** — Parallel WASM build orchestrator: runs the blake3_wasm and blake3_wasm_small builds concurrently.
 - **`scripts/test_npm.js`** — Node.js tests for npm packages (index.js + browser.js init-guard tests). `PKG_DIR` env var selects the package to test.
-- **`scripts/validate_bench_results.ts`** — Schema validation: checks bench result JSON against `BenchSuiteResult` structure to catch Rust/TS drift.
-- **`benches/deno/bench.ts`** — Performance: benchmarks in Deno
+- **`scripts/test_tooling.ts`** — Unit tests for the tooling modules, the release pipeline against fakes, and the release task's flags; needs no build.
+- **`scripts/validate_bench_results.task.ts`** — Schema validation: checks bench result JSON against `BenchSuiteResult` structure to catch Rust/TS drift.
+- **`benches/deno/bench.ts`** — Performance: benchmarks in Deno, loading the same entries as Node.js and Bun
 - **`benches/node/bench.ts`** — Performance: benchmarks in Node.js and Bun (runtime configurable via env vars)
 - **`crates/blake3_bench_wasmtime/`** — Performance: benchmarks WASI component via Wasmtime. Uses MAD-based outlier removal matching the JS `Benchmark` class. Also provides `--compare` mode for component model correctness verification.
-- **`benches/report.ts`** — Cross-runtime comparison with ratio annotations, visual bars, markdown output
-- **`benches/diff.ts`** — Regression detection between two result files using Welch's t-test and Cohen's d
+- **`benches/report.task.ts`** — Cross-runtime comparison with ratio annotations and visual bars, printed as text and saved as markdown
+- **`benches/diff.task.ts`** — Regression detection between two result files using Welch's t-test and Cohen's d
 - **`blake3_debug`** — Rust binary for native reference hashing and test vectors
 - **Reference:** `npm:blake3-wasm` package in `node_modules/` for comparison

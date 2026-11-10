@@ -1,8 +1,9 @@
 /**
  * Shared benchmark core — N runners, hash, optional streaming.
  *
- * No Deno.* or bare process.* references. Each runtime entry point loads
- * WASM modules and passes them as BenchRunner instances.
+ * Runs under Node.js, Bun, and Deno, so it reaches the system through `node:*`
+ * modules, which all three support. Each runtime entry point loads the WASM
+ * modules and passes them as BenchRunner instances.
  */
 
 import { execSync } from 'node:child_process';
@@ -13,6 +14,14 @@ import { benchmark_format_markdown } from '@fuzdev/fuz_util/benchmark_format.ts'
 import type { BenchmarkResult } from '@fuzdev/fuz_util/benchmark_types.ts';
 import { time_format, time_unit_detect_best } from '@fuzdev/fuz_util/time.ts';
 
+import {
+	type BenchGroupResult,
+	type BenchSection,
+	type BenchSuiteResult,
+	format_throughput,
+	get_bench_section,
+	SECTION_HEADERS
+} from './bench_result.ts';
 import { st } from './color.ts';
 
 export interface HasherInstance {
@@ -140,37 +149,6 @@ export interface BenchConfig {
 	gc_between_groups?: boolean;
 }
 
-export interface BenchGroupResult {
-	name: string;
-	data_bytes?: number;
-	results: Array<{
-		name: string;
-		category?: 'blake3' | 'reference';
-		stats: {
-			mean_ns: number;
-			ops_per_second: number;
-			std_dev_ns: number;
-			sample_size: number;
-			confidence_interval_ns: [number, number];
-			p50_ns: number;
-			p75_ns: number;
-			p90_ns: number;
-			p95_ns: number;
-			p99_ns: number;
-			min_ns: number;
-			max_ns: number;
-		};
-	}>;
-}
-
-export interface BenchSuiteResult {
-	runtime: string;
-	timestamp: string;
-	groups: BenchGroupResult[];
-	wasm_sizes: Array<{ label: string; bytes: number }>;
-	runner_categories?: Record<string, string>;
-}
-
 /** Map Benchmark results to the serializable BenchGroupResult format. */
 function map_bench_results(
 	results: BenchmarkResult[],
@@ -202,40 +180,6 @@ function to_hex(bytes: Uint8Array): string {
 		.join('');
 }
 
-/** Format throughput as MB/s (with comma separators) or KB/s. */
-export function format_throughput(ops_per_second: number, data_bytes: number): string {
-	const mb_s = (ops_per_second * data_bytes) / 1_000_000;
-	if (mb_s >= 1) return `${format_comma(Math.round(mb_s))} MB/s`;
-	return `${(mb_s * 1000).toFixed(1)} KB/s`;
-}
-
-/** Format a number with comma thousands separators. */
-function format_comma(n: number): string {
-	return Math.round(n)
-		.toString()
-		.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-/** Benchmark section for grouping in the summary. */
-export type BenchSection = 'one_shot' | 'streaming' | 'stream_fn' | 'component';
-
-/** Section headers for the summary output. */
-export const SECTION_HEADERS: Record<BenchSection, string> = {
-	one_shot: 'One-shot functions',
-	streaming: 'Streaming (manual hasher loop)',
-	stream_fn: 'Stream convenience functions (ReadableStream)',
-	component: 'Component model'
-};
-
-/** Determine which section a benchmark group belongs to. */
-export function get_bench_section(group_name: string): BenchSection {
-	if (group_name.startsWith('streaming')) return 'streaming';
-	if (group_name.includes('_stream')) return 'stream_fn';
-	// keyed_hash / derive_key without _bytes suffix are component model-only groups
-	if (/^(keyed_hash|derive_key) /.test(group_name)) return 'component';
-	return 'one_shot';
-}
-
 /** Build an array of chunks from a buffer subarray. */
 function make_chunks(buf: Uint8Array, bytes: number, chunk_size: number): Uint8Array[] {
 	const data = buf.subarray(0, bytes);
@@ -247,7 +191,7 @@ function make_chunks(buf: Uint8Array, bytes: number, chunk_size: number): Uint8A
 }
 
 /** Get the short git commit hash, or empty string if not in a repo. */
-export function get_git_commit_short(): string {
+function get_git_commit_short(): string {
 	try {
 		return execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim();
 	} catch {
@@ -300,12 +244,12 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 		console.log(`Verifying ${group_name} correctness...`);
 
 		// hash
-		const ref_hash = to_hex(group_runners[0].hash(verify_data));
+		const ref_hash = to_hex(group_runners[0]!.hash(verify_data));
 		for (let i = 1; i < group_runners.length; i++) {
-			const actual = to_hex(group_runners[i].hash(verify_data));
+			const actual = to_hex(group_runners[i]!.hash(verify_data));
 			if (actual !== ref_hash) {
 				throw new Error(
-					`hash mismatch in ${group_name}: ${group_runners[0].label} vs ${group_runners[i].label}`
+					`hash mismatch in ${group_name}: ${group_runners[0]!.label} vs ${group_runners[i]!.label}`
 				);
 			}
 		}
@@ -313,13 +257,13 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 		// keyed_hash — only if all runners in the group support it
 		const keyed_runners = group_runners.filter((r) => r.keyed_hash);
 		if (keyed_runners.length >= 2) {
-			const ref_keyed = to_hex(keyed_runners[0].keyed_hash!(verify_key, verify_data));
+			const ref_keyed = to_hex(keyed_runners[0]!.keyed_hash!(verify_key, verify_data));
 			for (let i = 1; i < keyed_runners.length; i++) {
-				const actual = to_hex(keyed_runners[i].keyed_hash!(verify_key, verify_data));
+				const actual = to_hex(keyed_runners[i]!.keyed_hash!(verify_key, verify_data));
 				if (actual !== ref_keyed) {
 					throw new Error(
-						`keyed_hash mismatch in ${group_name}: ${keyed_runners[0].label} vs ${
-							keyed_runners[i].label
+						`keyed_hash mismatch in ${group_name}: ${keyed_runners[0]!.label} vs ${
+							keyed_runners[i]!.label
 						}`
 					);
 				}
@@ -329,13 +273,13 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 		// derive_key — only if all runners in the group support it
 		const derive_runners = group_runners.filter((r) => r.derive_key);
 		if (derive_runners.length >= 2) {
-			const ref_derive = to_hex(derive_runners[0].derive_key!(verify_context, verify_data));
+			const ref_derive = to_hex(derive_runners[0]!.derive_key!(verify_context, verify_data));
 			for (let i = 1; i < derive_runners.length; i++) {
-				const actual = to_hex(derive_runners[i].derive_key!(verify_context, verify_data));
+				const actual = to_hex(derive_runners[i]!.derive_key!(verify_context, verify_data));
 				if (actual !== ref_derive) {
 					throw new Error(
-						`derive_key mismatch in ${group_name}: ${derive_runners[0].label} vs ${
-							derive_runners[i].label
+						`derive_key mismatch in ${group_name}: ${derive_runners[0]!.label} vs ${
+							derive_runners[i]!.label
 						}`
 					);
 				}
@@ -505,7 +449,7 @@ export async function run_benchmarks(config: BenchConfig): Promise<BenchSuiteRes
 		const warmup_chunks = make_chunks(streaming_buf, 1024, 64);
 		const warmup_bench = new Benchmark({ duration_ms, warmup_iterations, min_iterations: 3 });
 		warmup_bench.add('_warmup', () =>
-			stream_fn_runners[0].hash_stream!(make_stream(warmup_chunks))
+			stream_fn_runners[0]!.hash_stream!(make_stream(warmup_chunks))
 		);
 		await warmup_bench.run();
 

@@ -23,7 +23,7 @@ import {
 	hash_stream,
 	keyed_hash,
 	keyed_hash_stream
-} from '../../crates/blake3_wasm/mod_node.ts';
+} from '../../crates/blake3_wasm/mod.ts';
 import {
 	Blake3Hasher as Blake3HasherSmall,
 	derive_key as derive_key_small,
@@ -32,9 +32,12 @@ import {
 	hash_stream as hash_stream_small,
 	keyed_hash as keyed_hash_small,
 	keyed_hash_stream as keyed_hash_stream_small
-} from '../../crates/blake3_wasm_small/mod_node.ts';
-import blake3_npm from 'blake3-wasm';
-import { make_runners, run_benchmarks } from '../lib/bench_core.ts';
+} from '../../crates/blake3_wasm_small/mod.ts';
+import blake3_wasm_npm from 'blake3-wasm';
+import { make_runners, run_benchmarks, type NpmBlake3Like } from '../lib/bench_core.ts';
+
+// its typings return `Buffer | string` from `hash`, for an encoding option the harness never passes
+const blake3_npm = blake3_wasm_npm as NpmBlake3Like;
 
 const BENCH_DURATION = parseInt(process.env.BENCH_DURATION ?? '3000', 10);
 const BENCH_WARMUP = parseInt(process.env.BENCH_WARMUP ?? '10', 10);
@@ -52,7 +55,7 @@ const runners = make_runners(
 			hash_stream,
 			keyed_hash_stream,
 			derive_key_stream,
-			wasm_path: 'crates/blake3_wasm/pkg/web/blake3_wasm_bg.wasm'
+			wasm_path: 'crates/blake3_wasm/pkg/blake3_wasm_bg.wasm'
 		},
 		{
 			label: 'blake3_wasm_small',
@@ -63,7 +66,7 @@ const runners = make_runners(
 			hash_stream: hash_stream_small,
 			keyed_hash_stream: keyed_hash_stream_small,
 			derive_key_stream: derive_key_stream_small,
-			wasm_path: 'crates/blake3_wasm_small/pkg/web/blake3_wasm_small_bg.wasm'
+			wasm_path: 'crates/blake3_wasm_small/pkg/blake3_wasm_small_bg.wasm'
 		}
 	],
 	{ module: blake3_npm, wasm_path: 'node_modules/blake3-wasm/dist/wasm/nodejs/blake3_js_bg.wasm' }

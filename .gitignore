@@ -18,8 +18,8 @@ node_modules/
 /benches/results/*.md
 !/benches/results/report.md
 
-# Publish pipeline sentinel (marks an in-progress wetrun for retry detection)
-.changeset/.publish-in-progress
+# Release pipeline sentinel (marks an in-progress wetrun for retry detection)
+.changeset/.release-in-progress
 
 # Local (per-machine, never shared)
 *.local

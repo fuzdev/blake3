@@ -21,4 +21,4 @@ const FALLBACK: Format[] = ['cyan', 'green', 'yellow', 'magenta'];
 
 /** Get the style format for a runtime by name (or index fallback). */
 export const runtime_format = (name: string, index = 0): Format =>
-	RUNTIME_FORMATS[name] ?? FALLBACK[index % FALLBACK.length];
+	RUNTIME_FORMATS[name] ?? FALLBACK[index % FALLBACK.length]!;

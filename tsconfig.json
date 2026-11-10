@@ -1,0 +1,26 @@
+{
+	// typechecks the tooling and the shared sources without a build; `tsconfig.built.json` adds
+	// what imports wasm-pack's output (the crates' `mod.ts` and the bench entries), checked by
+	// `npm run test` once the packages are built
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"strict": true,
+		"skipLibCheck": true,
+		"noEmit": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noImplicitReturns": true,
+		"noImplicitOverride": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedIndexedAccess": true,
+		"verbatimModuleSyntax": true,
+		"erasableSyntaxOnly": true,
+		"allowImportingTsExtensions": true,
+		"resolveJsonModule": true,
+		"types": ["node"]
+	},
+	"include": ["scripts/**/*.ts", "benches/**/*.ts", "crates/blake3_wasm_core/*.ts"],
+	"exclude": ["benches/node/bench.ts", "benches/deno/bench.ts"]
+}

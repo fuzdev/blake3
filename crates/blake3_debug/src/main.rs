@@ -16,7 +16,7 @@ fn print_usage() {
     eprintln!();
     eprintln!("Commands:");
     eprintln!("  hash <hex_input>    Hash hex-encoded input with native blake3");
-    eprintln!("  test-vectors        Print JSON test vectors for Deno comparison script");
+    eprintln!("  test-vectors        Print JSON test vectors for the WASM correctness tests");
 }
 
 /// Hash hex-encoded input data and print the result.
@@ -65,7 +65,7 @@ fn vector_input(len: usize) -> Vec<u8> {
     (0..len).map(|i| (i % 251) as u8).collect()
 }
 
-/// Print JSON test vectors for the Deno comparison script.
+/// Print JSON test vectors for the WASM correctness tests.
 ///
 /// Outputs come from the native `blake3` crate. The patterned inputs use the
 /// official BLAKE3 test-vector convention (input, key, and context), so a

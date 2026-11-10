@@ -3,16 +3,16 @@
  *
  * Verifies the wasm-pack web target + auto-init wrapper works correctly
  * when imported as ESM in Node.js. Tests the same operations as
- * scripts/compare.ts but runs directly in Node.js against the built
- * pkg/web/ output.
+ * scripts/test_wasm.ts but through the published entries of the built
+ * pkg/ output.
  *
  * Usage: PKG_DIR=<pkg-dir> node --test scripts/test_npm.js
  *
  * Examples:
- *   PKG_DIR=crates/blake3_wasm/pkg/web node --test scripts/test_npm.js
- *   PKG_DIR=crates/blake3_wasm_small/pkg/web node --test scripts/test_npm.js
+ *   PKG_DIR=crates/blake3_wasm/pkg node --test scripts/test_npm.js
+ *   PKG_DIR=crates/blake3_wasm_small/pkg node --test scripts/test_npm.js
  *
- * Prerequisites: npm run build:wasm:web (or build:wasm:small:web)
+ * Prerequisites: npm run build:wasm (or build:wasm:simd / build:wasm:small)
  */
 
 import { describe, it } from 'node:test';
@@ -22,7 +22,7 @@ import { readFileSync } from 'node:fs';
 const pkg_dir = process.env.PKG_DIR;
 if (!pkg_dir) {
 	console.error('Usage: PKG_DIR=<pkg-dir> node --test scripts/test_npm.js');
-	console.error('Example: PKG_DIR=crates/blake3_wasm/pkg/web node --test scripts/test_npm.js');
+	console.error('Example: PKG_DIR=crates/blake3_wasm/pkg node --test scripts/test_npm.js');
 	process.exit(1);
 }
 
