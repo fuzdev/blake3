@@ -37,6 +37,7 @@ pub fn derive_key(context: &str, key_material: &[u8]) -> Vec<u8> {
 
 /// Streaming BLAKE3 hasher supporting incremental updates.
 #[wasm_bindgen]
+#[derive(Debug)]
 pub struct Blake3Hasher {
     inner: blake3::Hasher,
 }

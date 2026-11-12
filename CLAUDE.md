@@ -11,7 +11,7 @@ feature) for best throughput, plus a size-optimized build without SIMD.
 ## Quick Start
 
 ```bash
-npm run check                      # typecheck (cargo + tsc) + test:rust + test:tooling + clippy + fmt
+npm run check                      # typecheck (cargo + tsc) + test:rust + test:tooling + clippy + rustdoc + fmt
 npm run build:wasm                 # Build both WASM packages
 npm run compare                    # Build + correctness: all builds vs test vectors
 npm run test                       # All correctness tests (requires built artifacts)
@@ -183,7 +183,7 @@ path (`gro task scripts/validate_wasm_size.task.ts`), so `--help` lists a task's
 (`npm run release -- --help`). Key commands:
 
 ```bash
-npm run check                      # Full check (typecheck + test:rust + test:tooling + clippy + cargo fmt --all + tsv format --check)
+npm run check                      # Full check (typecheck + test:rust + test:tooling + clippy + rustdoc + cargo fmt --all + tsv format --check)
 npm run format                     # Format all (cargo fmt --all + tsv format)
 npm run typecheck                  # cargo check --workspace + gro typecheck (tsc over the tooling)
 npm run typecheck:built            # tsc over everything, incl. what imports wasm-pack output (needs a build; run by npm run test)
@@ -192,6 +192,7 @@ npm run build:wasm:simd            # Build blake3_wasm (web target + npm patch)
 npm run build:wasm:small           # Build blake3_wasm_small (web target + npm patch)
 npm run build:component            # Build WASI component
 npm run test:rust                  # Rust compilation check (cargo test)
+npm run lint:docs                  # rustdoc under -D warnings, all features and private items (in check)
 npm run test:tooling               # Unit tests for scripts/lib and benches/lib (no build needed)
 npm run test:wasm                  # Correctness: blake3_wasm vs test vectors (CRATE_DIR env)
 npm run test:wasm:small            # Correctness: blake3_wasm_small vs test vectors
@@ -323,6 +324,7 @@ The `fuzdev:blake3` WIT package (`wit/blake3.wit`) defines the component model i
 
 - **Rust edition 2024**, resolver 2
 - **Strict clippy**: all + pedantic + nursery + cargo enabled
+- **Rustdoc lints**: broken intra-doc links, invalid HTML tags, bare URLs, and redundant explicit links denied (`npm run lint:docs`)
 - **`unsafe_code = "forbid"`** at workspace level
 - **Release profile**: workspace uses opt-level=s, WASM SIMD build also uses `-Os` via RUSTFLAGS (SIMD hot path uses `#[inline(always)]` so opt-level doesn't affect it)
 - **WASM SIMD**: blake3_wasm depends on blake3_wasm_core with `simd` feature + `-C target-feature=+simd128` in RUSTFLAGS
@@ -472,7 +474,7 @@ npm run release -- --wetrun        # changeset version + sync + check + build + 
    Writes `.changeset/.release-in-progress` sentinel after bumping; detects retry via sentinel.
    Retry mode: sentinel present → skip version bump, proceed from current `package.json` version
 3. Sync version to `Cargo.toml` (wetrun only — dry-run reports state)
-4. `npm run check` (typecheck + test + clippy + cargo fmt --all + tsv format --check)
+4. `npm run check` (typecheck + test + clippy + rustdoc + cargo fmt --all + tsv format --check)
 5. `npm run build:wasm` (all WASM targets)
 6. Verify `pkg/package.json` name (kebab-case) and version match
 7. `npm run validate:npm` + `npm run validate:size` + correctness vs test vectors (`npm run test:wasm` + `test:wasm:small`, no rebuild)

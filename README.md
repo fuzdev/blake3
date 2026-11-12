@@ -257,7 +257,7 @@ and [Deno](https://deno.com/) and [Bun](https://bun.sh/) only for their benchmar
 
 ```bash
 cargo check --workspace        # fast Rust typecheck
-npm run check                  # full check (typecheck + test:rust + test:tooling + clippy + fmt)
+npm run check                  # full check (typecheck + test:rust + test:tooling + clippy + rustdoc + fmt)
 npm run compare                # build + correctness: all builds vs test vectors
 npm run test                   # all correctness tests (requires built artifacts)
 npm run validate               # everything: check + build + test + validate:*
