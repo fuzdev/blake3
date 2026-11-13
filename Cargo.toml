@@ -54,7 +54,7 @@ significant_drop_tightening = "allow"
 cargo_common_metadata = "allow"
 multiple_crate_versions = "allow"
 
-# Restriction lints (panic points need explicit #[allow] with justification)
+# Restriction lints (panic points need an explicit #[expect] with a reason)
 clone_on_ref_ptr = "warn"
 dbg_macro = "warn"
 expect_used = "warn"

@@ -3,13 +3,17 @@
 //! Loads BLAKE3 WASM components (built via `cargo component build`)
 //! and benchmarks them using the typed WIT bindings.
 
-// Bench binary: panics are appropriate for fatal errors, and precision
-// loss from u128→f64 / usize→f64 casts is negligible for timing data.
-#![allow(
+#![expect(
     clippy::panic,
+    reason = "a bench binary: a failed setup step, component call, or results write ends the run with its message"
+)]
+#![expect(
     clippy::cast_precision_loss,
+    reason = "nanosecond timings, sample counts, and byte sizes stay far below 2^53, past which a cast to `f64` rounds"
+)]
+#![expect(
     clippy::cast_sign_loss,
-    clippy::write_with_newline
+    reason = "the `f64` to integer casts floor or round non-negative values: a percentile rank, a kept-sample count, a throughput"
 )]
 
 use std::collections::HashMap;
@@ -123,7 +127,10 @@ fn bench_warmup_iterations() -> u32 {
 
 /// Compare two `f64` values for sorting (NaN-safe).
 /// Takes references to match `slice::sort_by` signature.
-#[allow(clippy::trivially_copy_pass_by_ref)]
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "`slice::sort_by` passes its comparator `&f64`s"
+)]
 fn cmp_f64(a: &f64, b: &f64) -> std::cmp::Ordering {
     a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)
 }
@@ -161,12 +168,17 @@ fn percentile_sorted(s: &[f64], p: f64) -> f64 {
         return 0.0;
     }
     let h = p * (n - 1) as f64;
-    #[allow(clippy::cast_possible_truncation)]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "with `p` in `0.0..=1.0`, `h` lies in `0..=n - 1`, so its floor fits a `usize`"
+    )]
     let lo = h.floor() as usize;
     let hi = (lo + 1).min(n - 1);
     let frac = h - lo as f64;
-    // not `mul_add`: R-7 as written rounds the product before the addition
-    #[allow(clippy::suboptimal_flops)]
+    #[expect(
+        clippy::suboptimal_flops,
+        reason = "not `mul_add`: R-7 as written rounds the product before the addition"
+    )]
     let value = s[lo] + frac * (s[hi] - s[lo]);
     value
 }
@@ -229,7 +241,10 @@ fn filter_outliers_mad(samples: &[f64]) -> Vec<f64> {
     }
 
     // Keep the 80% closest to median
-    #[allow(clippy::cast_possible_truncation)]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the floor of a fraction of `samples.len()` fits a `usize`"
+    )]
     let keep = (samples.len() as f64 * KEEP_RATIO).floor() as usize;
     let mut with_dist: Vec<(f64, f64)> = samples.iter().map(|&x| (x, (x - med).abs())).collect();
     with_dist.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
@@ -280,7 +295,10 @@ fn compute_stats(samples: &[f64]) -> BenchStats {
 fn format_throughput(ops_per_second: f64, data_bytes: u64) -> String {
     let mb_s = ops_per_second * data_bytes as f64 / 1_000_000.0;
     if mb_s >= 1.0 {
-        #[allow(clippy::cast_possible_truncation)]
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "a throughput in MB/s is far below `u64::MAX`"
+        )]
         let mb_s_int = mb_s.round() as u64;
         format!("{} MB/s", insert_commas(&format!("{mb_s_int}")))
     } else {
@@ -544,7 +562,7 @@ fn section_header(section: &str) -> &'static str {
     }
 }
 
-#[allow(clippy::unwrap_used)] // write! to String is infallible
+#[expect(clippy::unwrap_used, reason = "`write!` to a `String` never fails")]
 fn format_group_markdown(group: &BenchGroupResult, unit: &TimeUnit) -> String {
     let u = unit.label();
     let mut out = String::new();
@@ -618,7 +636,7 @@ fn format_group_markdown(group: &BenchGroupResult, unit: &TimeUnit) -> String {
     for w in &widths {
         write!(out, " {} |", "-".repeat(*w)).unwrap();
     }
-    write!(out, "\n").unwrap();
+    writeln!(out).unwrap();
 
     // Data rows
     for row in &rows {
@@ -630,13 +648,13 @@ fn format_group_markdown(group: &BenchGroupResult, unit: &TimeUnit) -> String {
                 write!(out, " {:>w$} |", cell, w = widths[i]).unwrap();
             }
         }
-        write!(out, "\n").unwrap();
+        writeln!(out).unwrap();
     }
 
     out
 }
 
-#[allow(clippy::unwrap_used)] // write! to String is infallible
+#[expect(clippy::unwrap_used, reason = "`write!` to a `String` never fails")]
 fn format_suite_markdown(suite: &BenchSuiteResult) -> String {
     let mut md = String::new();
 
@@ -1204,7 +1222,10 @@ fn chrono_free_timestamp() -> String {
     // Days since epoch to Y-M-D
     // Algorithm: Howard Hinnant, "chrono-Compatible Low-Level Date Algorithms"
     // https://howardhinnant.github.io/date_algorithms.html#civil_from_days
-    #[allow(clippy::cast_possible_wrap)]
+    #[expect(
+        clippy::cast_possible_wrap,
+        reason = "days since the epoch, a `u64` of seconds over 86400, is far below `i64::MAX`"
+    )]
     let z = days as i64 + 719_468;
     let era = z / 146_097;
     let doe = z - era * 146_097;

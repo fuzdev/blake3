@@ -16,7 +16,12 @@ pub fn hash(data: &[u8]) -> Vec<u8> {
 }
 
 /// Keyed hash (MAC). Key must be exactly 32 bytes.
-#[allow(clippy::missing_errors_doc)]
+// `allow`, not `expect`: `#[wasm_bindgen]` re-emits the item, and an expectation
+// on it never registers as fulfilled.
+#[allow(
+    clippy::missing_errors_doc,
+    reason = "the only error is a key that isn't 32 bytes, the requirement the summary line states"
+)]
 #[wasm_bindgen]
 pub fn keyed_hash(key: &[u8], data: &[u8]) -> Result<Vec<u8>, JsError> {
     let key: [u8; 32] = key
@@ -59,7 +64,12 @@ impl Blake3Hasher {
     }
 
     /// Create a new keyed hasher. Key must be exactly 32 bytes.
-    #[allow(clippy::missing_errors_doc)]
+    // `allow`, not `expect`: `#[wasm_bindgen]` on the impl re-emits the method, and
+    // an expectation on it never registers as fulfilled.
+    #[allow(
+        clippy::missing_errors_doc,
+        reason = "the only error is a key that isn't 32 bytes, the requirement the summary line states"
+    )]
     pub fn new_keyed(key: &[u8]) -> Result<Self, JsError> {
         let key: [u8; 32] = key
             .try_into()

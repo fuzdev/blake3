@@ -27,7 +27,10 @@ fn cmd_hash(args: &[String]) {
         std::process::exit(1);
     };
 
-    #[allow(clippy::option_if_let_else)]
+    #[expect(
+        clippy::option_if_let_else,
+        reason = "`map_or_else` would bury the hex-decode branch and its `process::exit` in a closure"
+    )]
     let data = if let Some(text) = hex_input.strip_prefix("text:") {
         text.as_bytes().to_vec()
     } else {
@@ -61,7 +64,10 @@ const VECTOR_LENGTHS: &[usize] = &[
 /// The official BLAKE3 test-vector input: byte `i` is `i % 251`. The cycle
 /// is prime, so neighboring blocks and chunks never repeat each other.
 fn vector_input(len: usize) -> Vec<u8> {
-    #[allow(clippy::cast_possible_truncation)]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "`i % 251` is below 256, so it fits a `u8`"
+    )]
     (0..len).map(|i| (i % 251) as u8).collect()
 }
 
