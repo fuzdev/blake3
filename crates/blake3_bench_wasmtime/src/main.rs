@@ -57,7 +57,7 @@ fn new_store(engine: &wasmtime::Engine) -> wasmtime::Store<HostState> {
 fn new_linker(engine: &wasmtime::Engine) -> wasmtime::component::Linker<HostState> {
     let mut linker = wasmtime::component::Linker::new(engine);
     wasmtime_wasi::p2::add_to_linker_sync(&mut linker)
-        .unwrap_or_else(|e| panic!("Failed to add WASI to linker: {e}"));
+        .unwrap_or_else(|e| panic!("Failed to add WASI to linker: {e:#}"));
     linker
 }
 
@@ -359,10 +359,10 @@ fn bench_one_shot(
         }
 
         let component = wasmtime::component::Component::from_file(engine, path)
-            .unwrap_or_else(|e| panic!("Failed to load {}: {e}", profile.wasm_path));
+            .unwrap_or_else(|e| panic!("Failed to load {}: {e:#}", profile.wasm_path));
         let mut store = new_store(engine);
         let instance = Blake3::instantiate(&mut store, &component, linker)
-            .unwrap_or_else(|e| panic!("Failed to instantiate {}: {e}", profile.label));
+            .unwrap_or_else(|e| panic!("Failed to instantiate {}: {e:#}", profile.label));
 
         // Warmup
         for _ in 0..bench_warmup_iterations() {
@@ -420,10 +420,10 @@ fn bench_streaming(
         }
 
         let component = wasmtime::component::Component::from_file(engine, path)
-            .unwrap_or_else(|e| panic!("Failed to load {}: {e}", profile.wasm_path));
+            .unwrap_or_else(|e| panic!("Failed to load {}: {e:#}", profile.wasm_path));
         let mut store = new_store(engine);
         let instance = Blake3::instantiate(&mut store, &component, linker)
-            .unwrap_or_else(|e| panic!("Failed to instantiate {}: {e}", profile.label));
+            .unwrap_or_else(|e| panic!("Failed to instantiate {}: {e:#}", profile.label));
 
         let hashing = instance.fuzdev_blake3_hashing();
 
@@ -432,19 +432,19 @@ fn bench_streaming(
             let hasher = hashing
                 .hasher()
                 .call_constructor(&mut store)
-                .unwrap_or_else(|e| panic!("Failed to create hasher for {}: {e}", profile.label));
+                .unwrap_or_else(|e| panic!("Failed to create hasher for {}: {e:#}", profile.label));
             for chunk in &chunks {
                 hashing
                     .hasher()
                     .call_update(&mut store, hasher, chunk)
                     .unwrap_or_else(|e| {
-                        panic!("Failed to update hasher for {}: {e}", profile.label)
+                        panic!("Failed to update hasher for {}: {e:#}", profile.label)
                     });
             }
             let _ = hashing.hasher().call_finalize(&mut store, hasher);
             hasher
                 .resource_drop(&mut store)
-                .unwrap_or_else(|e| panic!("Failed to drop hasher for {}: {e}", profile.label));
+                .unwrap_or_else(|e| panic!("Failed to drop hasher for {}: {e:#}", profile.label));
         }
 
         // Benchmark
@@ -455,19 +455,19 @@ fn bench_streaming(
             let hasher = hashing
                 .hasher()
                 .call_constructor(&mut store)
-                .unwrap_or_else(|e| panic!("Failed to create hasher for {}: {e}", profile.label));
+                .unwrap_or_else(|e| panic!("Failed to create hasher for {}: {e:#}", profile.label));
             for chunk in &chunks {
                 hashing
                     .hasher()
                     .call_update(&mut store, hasher, chunk)
                     .unwrap_or_else(|e| {
-                        panic!("Failed to update hasher for {}: {e}", profile.label)
+                        panic!("Failed to update hasher for {}: {e:#}", profile.label)
                     });
             }
             let _ = hashing.hasher().call_finalize(&mut store, hasher);
             hasher
                 .resource_drop(&mut store)
-                .unwrap_or_else(|e| panic!("Failed to drop hasher for {}: {e}", profile.label));
+                .unwrap_or_else(|e| panic!("Failed to drop hasher for {}: {e:#}", profile.label));
             samples.push(start.elapsed().as_nanos() as f64);
         }
 
@@ -708,10 +708,10 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
     );
 
     let component = wasmtime::component::Component::from_file(engine, path)
-        .unwrap_or_else(|e| panic!("Failed to load {wasm_path}: {e}"));
+        .unwrap_or_else(|e| panic!("Failed to load {wasm_path}: {e:#}"));
     let mut store = new_store(engine);
     let instance = Blake3::instantiate(&mut store, &component, linker)
-        .unwrap_or_else(|e| panic!("Failed to instantiate component: {e}"));
+        .unwrap_or_else(|e| panic!("Failed to instantiate component: {e:#}"));
     let hashing = instance.fuzdev_blake3_hashing();
 
     let vectors_json = std::fs::read_to_string("test/test_vectors.json")
@@ -740,7 +740,7 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         let input = hex_to_bytes(&v.input_hex);
         let result = hashing
             .call_hash(&mut store, &input)
-            .unwrap_or_else(|e| panic!("call_hash failed: {e}"));
+            .unwrap_or_else(|e| panic!("call_hash failed: {e:#}"));
         check(&format!("hash({})", v.label), &to_hex(&result), &v.hash);
     }
 
@@ -752,7 +752,7 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         let key = hex_to_bytes(&v.keyed_hash_key_hex);
         let result = hashing
             .call_keyed_hash(&mut store, &key, &input)
-            .unwrap_or_else(|e| panic!("call_keyed_hash failed: {e}"))
+            .unwrap_or_else(|e| panic!("call_keyed_hash failed: {e:#}"))
             .unwrap_or_else(|e| panic!("keyed_hash returned error: {e:?}"));
         check(
             &format!("keyed_hash({})", v.label),
@@ -768,7 +768,7 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         let input = hex_to_bytes(&v.input_hex);
         let result = hashing
             .call_derive_key(&mut store, &v.derive_key_context, &input)
-            .unwrap_or_else(|e| panic!("call_derive_key failed: {e}"));
+            .unwrap_or_else(|e| panic!("call_derive_key failed: {e:#}"));
         check(
             &format!("derive_key({})", v.label),
             &to_hex(&result),
@@ -784,15 +784,15 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         let hasher = hashing
             .hasher()
             .call_constructor(&mut store)
-            .unwrap_or_else(|e| panic!("constructor failed: {e}"));
+            .unwrap_or_else(|e| panic!("constructor failed: {e:#}"));
         hashing
             .hasher()
             .call_update(&mut store, hasher, &input)
-            .unwrap_or_else(|e| panic!("update failed: {e}"));
+            .unwrap_or_else(|e| panic!("update failed: {e:#}"));
         let result = hashing
             .hasher()
             .call_finalize(&mut store, hasher)
-            .unwrap_or_else(|e| panic!("finalize failed: {e}"));
+            .unwrap_or_else(|e| panic!("finalize failed: {e:#}"));
         check(
             &format!("streaming({})", v.label),
             &to_hex(&result),
@@ -800,7 +800,7 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         );
         hasher
             .resource_drop(&mut store)
-            .unwrap_or_else(|e| panic!("drop failed: {e}"));
+            .unwrap_or_else(|e| panic!("drop failed: {e:#}"));
     }
 
     // Keyed streaming
@@ -812,16 +812,16 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         let hasher = hashing
             .hasher()
             .call_new_keyed(&mut store, &key)
-            .unwrap_or_else(|e| panic!("call_new_keyed failed: {e}"))
+            .unwrap_or_else(|e| panic!("call_new_keyed failed: {e:#}"))
             .unwrap_or_else(|e| panic!("new_keyed returned error: {e:?}"));
         hashing
             .hasher()
             .call_update(&mut store, hasher, &input)
-            .unwrap_or_else(|e| panic!("update failed: {e}"));
+            .unwrap_or_else(|e| panic!("update failed: {e:#}"));
         let result = hashing
             .hasher()
             .call_finalize(&mut store, hasher)
-            .unwrap_or_else(|e| panic!("finalize failed: {e}"));
+            .unwrap_or_else(|e| panic!("finalize failed: {e:#}"));
         check(
             &format!("keyed streaming({})", v.label),
             &to_hex(&result),
@@ -829,7 +829,7 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         );
         hasher
             .resource_drop(&mut store)
-            .unwrap_or_else(|e| panic!("drop failed: {e}"));
+            .unwrap_or_else(|e| panic!("drop failed: {e:#}"));
     }
 
     // Derive key streaming
@@ -840,15 +840,15 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         let hasher = hashing
             .hasher()
             .call_new_derive_key(&mut store, &v.derive_key_context)
-            .unwrap_or_else(|e| panic!("call_new_derive_key failed: {e}"));
+            .unwrap_or_else(|e| panic!("call_new_derive_key failed: {e:#}"));
         hashing
             .hasher()
             .call_update(&mut store, hasher, &input)
-            .unwrap_or_else(|e| panic!("update failed: {e}"));
+            .unwrap_or_else(|e| panic!("update failed: {e:#}"));
         let result = hashing
             .hasher()
             .call_finalize(&mut store, hasher)
-            .unwrap_or_else(|e| panic!("finalize failed: {e}"));
+            .unwrap_or_else(|e| panic!("finalize failed: {e:#}"));
         check(
             &format!("derive_key streaming({})", v.label),
             &to_hex(&result),
@@ -856,7 +856,7 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         );
         hasher
             .resource_drop(&mut store)
-            .unwrap_or_else(|e| panic!("drop failed: {e}"));
+            .unwrap_or_else(|e| panic!("drop failed: {e:#}"));
     }
 
     // finalize_and_reset
@@ -871,15 +871,15 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         let hasher = hashing
             .hasher()
             .call_constructor(&mut store)
-            .unwrap_or_else(|e| panic!("constructor failed: {e}"));
+            .unwrap_or_else(|e| panic!("constructor failed: {e:#}"));
         hashing
             .hasher()
             .call_update(&mut store, hasher, &input)
-            .unwrap_or_else(|e| panic!("update failed: {e}"));
+            .unwrap_or_else(|e| panic!("update failed: {e:#}"));
         let result = hashing
             .hasher()
             .call_finalize_and_reset(&mut store, hasher)
-            .unwrap_or_else(|e| panic!("finalize_and_reset failed: {e}"));
+            .unwrap_or_else(|e| panic!("finalize_and_reset failed: {e:#}"));
         check("finalize_and_reset == hash", &to_hex(&result), &v.hash);
 
         // After reset, should produce fresh hash
@@ -887,14 +887,14 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         hashing
             .hasher()
             .call_update(&mut store, hasher, world)
-            .unwrap_or_else(|e| panic!("update failed: {e}"));
+            .unwrap_or_else(|e| panic!("update failed: {e:#}"));
         let result2 = hashing
             .hasher()
             .call_finalize(&mut store, hasher)
-            .unwrap_or_else(|e| panic!("finalize failed: {e}"));
+            .unwrap_or_else(|e| panic!("finalize failed: {e:#}"));
         let expected = hashing
             .call_hash(&mut store, world)
-            .unwrap_or_else(|e| panic!("call_hash failed: {e}"));
+            .unwrap_or_else(|e| panic!("call_hash failed: {e:#}"));
         check(
             "after finalize_and_reset, hasher is fresh",
             &to_hex(&result2),
@@ -902,7 +902,7 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
         );
         hasher
             .resource_drop(&mut store)
-            .unwrap_or_else(|e| panic!("drop failed: {e}"));
+            .unwrap_or_else(|e| panic!("drop failed: {e:#}"));
     }
 
     // Error paths — invalid key length
@@ -913,7 +913,7 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
     let bad_key = vec![0x01_u8; 16];
     let result = hashing
         .call_keyed_hash(&mut store, &bad_key, &[0u8])
-        .unwrap_or_else(|e| panic!("call_keyed_hash trap: {e}"));
+        .unwrap_or_else(|e| panic!("call_keyed_hash trap: {e:#}"));
     if result.is_err() {
         eprintln!("  PASS: keyed_hash(16-byte key) returns error");
         passed += 1;
@@ -926,7 +926,7 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
     let result = hashing
         .hasher()
         .call_new_keyed(&mut store, &[])
-        .unwrap_or_else(|e| panic!("call_new_keyed trap: {e}"));
+        .unwrap_or_else(|e| panic!("call_new_keyed trap: {e:#}"));
     if result.is_err() {
         eprintln!("  PASS: new_keyed(empty key) returns error");
         passed += 1;
@@ -951,7 +951,7 @@ fn run_compare(engine: &wasmtime::Engine, linker: &wasmtime::component::Linker<H
 
 fn main() {
     let engine = wasmtime::Engine::new(wasmtime::Config::new().wasm_component_model(true))
-        .unwrap_or_else(|e| panic!("Failed to create engine: {e}"));
+        .unwrap_or_else(|e| panic!("Failed to create engine: {e:#}"));
     let linker = new_linker(&engine);
 
     // --compare mode: correctness verification instead of benchmarks
