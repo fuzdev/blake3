@@ -38,7 +38,8 @@ import {
 	RELEASE_PACKAGES,
 	RELEASE_SENTINEL_PATH,
 	RELEASE_VALIDATIONS,
-	run_release
+	run_release,
+	to_non_release_changes
 } from './lib/release.ts';
 import { validate_wasm_size } from './lib/wasm_size.ts';
 import { Args as ReleaseArgs } from './release.task.ts';
@@ -536,7 +537,15 @@ interface FakeReleaseOptions {
 	logged_out?: boolean;
 	/** The name the fake build stamps on the second package, its own when absent. */
 	built_name?: string;
+	/** The checked-out branch, `main` when absent; empty for a detached `HEAD`. */
+	branch?: string;
+	/** Whether `git fetch` fails. */
+	fetch_fails?: boolean;
+	/** The commit `origin/main` resolves to, `HEAD`'s when absent. */
+	remote_commit?: string;
 }
+
+const HEAD_COMMIT = 'a'.repeat(40);
 
 /**
  * Fake programs over a temp project: `npm run build:wasm` writes the built packages'
@@ -544,6 +553,7 @@ interface FakeReleaseOptions {
  */
 const create_fake_release = (project: FsDir, options: FakeReleaseOptions = {}) => {
 	const calls: Array<FakeCall> = [];
+	const warnings: Array<string> = [];
 	const record = (program: string, args: ReadonlyArray<string>, call?: SpawnCallOptions) => {
 		const cwd = call?.cwd?.path;
 		calls.push(cwd === undefined ? { program, args } : { program, args, cwd });
@@ -555,8 +565,18 @@ const create_fake_release = (project: FsDir, options: FakeReleaseOptions = {}) =
 		git: {
 			out: async (args: ReadonlyArray<string>) => {
 				record('git', args);
-				if (args[0] === 'branch') return output(0, 'main\n');
+				if (args[0] === 'branch') return output(0, `${options.branch ?? 'main'}\n`);
+				if (args[0] === 'rev-parse') {
+					const commit = args.at(-1)!.startsWith('HEAD')
+						? HEAD_COMMIT
+						: (options.remote_commit ?? HEAD_COMMIT);
+					return output(0, `${commit}\n`);
+				}
 				return output(0, options.status ?? '');
+			},
+			run: async (args: ReadonlyArray<string>) => {
+				record('git', args);
+				return exited(args[0] === 'fetch' && options.fetch_fails ? 128 : 0);
 			}
 		},
 		npm: {
@@ -605,9 +625,9 @@ const create_fake_release = (project: FsDir, options: FakeReleaseOptions = {}) =
 				return exited(0);
 			}
 		},
-		log: { info: () => {}, warn: () => {} }
+		log: { info: () => {}, warn: (message: string) => warnings.push(message) }
 	};
-	return { deps, calls };
+	return { deps, calls, warnings };
 };
 
 const write_release_project = async (
@@ -626,6 +646,31 @@ const write_release_project = async (
 
 const scripts_run = (calls: ReadonlyArray<FakeCall>) =>
 	calls.filter((c) => c.program === 'npm' && c.args[0] === 'run').map((c) => c.args[1]);
+
+describe('to_non_release_changes', () => {
+	test('keeps paths outside the release files, both sides of a rename', () => {
+		const porcelain = [
+			' M package.json',
+			' D .changeset/some-change.md',
+			'?? CHANGELOG.md',
+			' M Cargo.lock',
+			' M Cargo.toml.orig',
+			'R  README.md -> docs/README.md',
+			'R  .changeset/a.md -> .changeset/b.md',
+			' M scripts/lib/release.ts'
+		].join('\n');
+		assert.deepStrictEqual(to_non_release_changes(porcelain), [
+			'Cargo.toml.orig',
+			'README.md',
+			'docs/README.md',
+			'scripts/lib/release.ts'
+		]);
+	});
+
+	test('is empty for a clean tree', () => {
+		assert.deepStrictEqual(to_non_release_changes(''), []);
+	});
+});
 
 describe('release pipeline, against fakes', () => {
 	test('a dry-run validates and packs, and changes nothing', async () => {
@@ -676,19 +721,79 @@ describe('release pipeline, against fakes', () => {
 		await write_release_project(project, { pending: false });
 		await project.write(RELEASE_SENTINEL_PATH, '0.2.0');
 		const { deps, calls } = create_fake_release(project, {
-			status: ' M package.json',
+			status:
+				' M package.json\n M CHANGELOG.md\n M Cargo.toml\n M Cargo.lock\n D .changeset/some-change.md',
 			published: ['@fuzdev/blake3-wasm@0.2.0']
 		});
 		await run_release(deps, { wetrun: true });
 
 		assert.ok(!calls.some((c) => c.program === 'changeset'));
-		assert.ok(!calls.some((c) => c.program === 'git' && c.args[0] === 'status'));
 		const publishes = calls.filter((c) => c.args[0] === 'publish');
 		assert.deepStrictEqual(
 			publishes.map((c) => c.cwd),
 			[`${project.path}/crates/blake3_wasm_small/pkg`]
 		);
 		assert.strictEqual(await project.exists(RELEASE_SENTINEL_PATH), false);
+	});
+
+	test('a retry refuses changes outside the release files', async () => {
+		await using project = await fs.temp_dir('blake3-release-');
+		await write_release_project(project, { pending: false });
+		await project.write(RELEASE_SENTINEL_PATH, '0.2.0');
+		const { deps, calls } = create_fake_release(project, {
+			status: ' M package.json\n M crates/blake3_wasm_core/src/lib.rs'
+		});
+		await assert.rejects(
+			run_release(deps, { wetrun: true }),
+			/outside the release files:\n\s+crates\/blake3_wasm_core\/src\/lib\.rs\n/
+		);
+		assert.deepStrictEqual(scripts_run(calls), []);
+		assert.strictEqual((await project.read_text(RELEASE_SENTINEL_PATH)).trim(), '0.2.0');
+	});
+
+	test('a wetrun refuses a branch other than main, and a dry-run warns', async () => {
+		await using project = await fs.temp_dir('blake3-release-');
+		await write_release_project(project);
+		const wet = create_fake_release(project, { branch: 'feature', bump_to: '0.3.0' });
+		await assert.rejects(run_release(wet.deps, { wetrun: true }), /branch "feature"/);
+		assert.ok(!wet.calls.some((c) => c.program === 'changeset'));
+		const detached = create_fake_release(project, { branch: '', bump_to: '0.3.0' });
+		await assert.rejects(run_release(detached.deps, { wetrun: true }), /detached HEAD/);
+		const dry = create_fake_release(project, { branch: 'feature' });
+		await run_release(dry.deps, { wetrun: false });
+		assert.ok(dry.warnings.some((w) => /branch "feature".*a wetrun refuses/.test(w)));
+	});
+
+	test('a wetrun refuses a HEAD that is not origin/main, and a dry-run warns', async () => {
+		await using project = await fs.temp_dir('blake3-release-');
+		await write_release_project(project);
+		const remote_commit = 'b'.repeat(40);
+		const wet = create_fake_release(project, { remote_commit, bump_to: '0.3.0' });
+		await assert.rejects(run_release(wet.deps, { wetrun: true }), /is not origin\/main/);
+		assert.ok(
+			wet.calls.some((c) => c.program === 'git' && c.args.join(' ') === 'fetch origin main')
+		);
+		assert.ok(!wet.calls.some((c) => c.program === 'changeset'));
+		const dry = create_fake_release(project, { remote_commit });
+		await run_release(dry.deps, { wetrun: false });
+		assert.ok(dry.warnings.some((w) => /is not origin\/main/.test(w)));
+	});
+
+	test('a wetrun refuses when the fetch fails', async () => {
+		await using project = await fs.temp_dir('blake3-release-');
+		await write_release_project(project);
+		const { deps, calls } = create_fake_release(project, { fetch_fails: true, bump_to: '0.3.0' });
+		await assert.rejects(run_release(deps, { wetrun: true }), /git fetch origin main failed/);
+		assert.ok(!calls.some((c) => c.program === 'changeset'));
+	});
+
+	test('a dry-run names a stale sentinel as stale, not as a retry', async () => {
+		await using project = await fs.temp_dir('blake3-release-');
+		await write_release_project(project);
+		await project.write(RELEASE_SENTINEL_PATH, '0.1.0');
+		const { deps, warnings } = create_fake_release(project);
+		await run_release(deps, { wetrun: false });
+		assert.ok(warnings.some((w) => /stale sentinel \(v0\.1\.0\)/.test(w)));
 	});
 
 	test('a wetrun with nothing to bump and no sentinel fails before building', async () => {

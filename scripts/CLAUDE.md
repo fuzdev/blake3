@@ -44,6 +44,9 @@ Each task file is a thin composition root: it imports gro's host modules (`@fuzd
 - `lib/npm_package.ts` does targeted type stripping on `stream.ts` rather than using a
   general-purpose TS stripper — the file is small and stable
 - `lib/release.ts` uses a `.changeset/.release-in-progress` sentinel for crash recovery — detects
-  retry mode when the sentinel version matches `package.json`
+  retry mode when the sentinel version matches `package.json`, and a retry allows uncommitted
+  changes only to the release files (`RELEASE_FILES`)
+- A wetrun refuses to start off `main`, behind or ahead of `origin/main` (after a fetch), or with
+  a dirty tree; a dry-run warns about each
 - The validators exit 1 when there's nothing to validate (an unbuilt package, no bench results),
   as on a failure, so a gate never passes by skipping

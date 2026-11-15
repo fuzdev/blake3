@@ -8,6 +8,11 @@
  * failed run can be retried. A sentinel file written after the bump marks a wetrun in
  * progress, so a retry resumes from the bumped version instead of bumping again.
  *
+ * A wetrun refuses to start off `main`, with `HEAD` not at the freshly fetched `origin/main`,
+ * or with uncommitted changes (on a retry, any outside the release files), so the
+ * published packages are built from the commit the finalize tags and pushes.
+ * A dry-run warns about each instead.
+ *
  * @module
  */
 
@@ -36,6 +41,28 @@ export const RELEASE_FILES: ReadonlyArray<string> = [
 	'.changeset'
 ];
 
+/** The remote and branch a release publishes from, which the tag is pushed to. */
+export const RELEASE_REMOTE = 'origin';
+export const RELEASE_BRANCH = 'main';
+
+/**
+ * Whether a working-tree path is one of `RELEASE_FILES` or inside one of them.
+ * @param path - repo-relative, as `git status --porcelain` prints it
+ */
+export const is_release_file = (path: string): boolean =>
+	RELEASE_FILES.some((file) => path === file || path.startsWith(`${file}/`));
+
+/**
+ * The paths in `git status --porcelain` output that aren't release files,
+ * both sides of a rename included.
+ */
+export const to_non_release_changes = (porcelain: string): Array<string> =>
+	porcelain
+		.split('\n')
+		.filter((line) => line.trim())
+		.flatMap((line) => line.slice(3).split(' -> '))
+		.filter((path) => !is_release_file(path));
+
 /**
  * The validations after the build, run against the built packages without rebuilding.
  * The WASI component isn't published, so its tests aren't among them.
@@ -58,8 +85,11 @@ export interface ReleaseLog {
 export interface ReleaseDeps {
 	/** The repo, holding `package.json`, `Cargo.toml`, `.changeset/`, and the built packages. */
 	project: FsDir;
-	/** Reads the local repo: the branch and the working tree's status. */
-	git: Pick<SpawnProgram, 'out'>;
+	/**
+	 * Reads the local repo (the branch, the working tree's status, the commits) and fetches
+	 * the release branch, which may prompt, so it needs the user's credentials.
+	 */
+	git: Pick<SpawnProgram, 'out' | 'run'>;
 	/** Runs the package scripts, and checks auth, the registry, and publishes. */
 	npm: Pick<SpawnProgram, 'out' | 'run'>;
 	/** The changesets CLI, `null` when it isn't installed. */
@@ -106,31 +136,74 @@ export const run_release = async (deps: ReleaseDeps, { wetrun }: ReleaseOptions)
 	}
 	log.info(`  changeset CLI: ${changeset.path}`);
 
-	// releases publish from main, a warning only since the git finalize is manual
+	// a wetrun refuses what a dry-run warns about: the published packages must be built from
+	// the commit the tag lands on, and the finalize's push must not fail after the publish
+	const refuse_or_warn = (message: string): void => {
+		if (wetrun) throw new TaskError(message);
+		log.warn(`  ${message} (a wetrun refuses)`);
+	};
+
 	const branch = await git.out(['branch', '--show-current']);
 	const branch_name = is_complete(branch) ? branch.stdout.trim() : '';
-	if (branch_name && branch_name !== 'main') {
-		log.warn(`  on branch "${branch_name}" — releases publish from main`);
+	if (branch_name !== RELEASE_BRANCH) {
+		refuse_or_warn(
+			`on ${branch_name ? `branch "${branch_name}"` : 'a detached HEAD'} — releases publish from ${RELEASE_BRANCH}`
+		);
 	}
 
 	const initial_sentinel = await read_sentinel(project);
 	const version_before = await read_package_version(project);
-	// a valid retry skips the cleanliness check, since `changeset version` left changes behind;
-	// a stale sentinel (another version) still gets it
+	const status = await git.out(['status', '--porcelain']);
+	if (!is_complete(status)) {
+		throw new TaskError('git status failed — is this a git repository?');
+	}
+	const uncommitted = status.stdout.trim();
+	// a valid retry allows the release files' changes that `changeset version` and the sync
+	// left behind, but nothing else, which would be published without reaching the release
+	// commit's scoped `git add`; a stale sentinel (another version) gets the full check
 	const retry_mode = wetrun && initial_sentinel !== null && initial_sentinel === version_before;
 	if (retry_mode) {
-		log.info('  Sentinel detected — skipping git cleanliness check (retry mode)');
+		log.info('  Sentinel detected — allowing uncommitted release files (retry mode)');
+		// the raw output, since trimming would eat the first line's status column
+		const outside = to_non_release_changes(status.stdout);
+		if (outside.length) {
+			throw new TaskError(
+				[
+					'refusing to retry with uncommitted changes outside the release files:',
+					indent(outside.join('\n')),
+					'They would be published but left out of the release commit.',
+					`Commit and push them, leaving the release files (${RELEASE_FILES.join(', ')}) uncommitted,`,
+					'then re-run `npm run release -- --wetrun`.'
+				].join('\n')
+			);
+		}
+	} else if (uncommitted) {
+		log.warn(`  uncommitted changes in worktree:\n${indent(uncommitted)}`);
+		if (wetrun) throw new TaskError('refusing to publish with uncommitted changes');
+		log.warn('  Continuing dry-run anyway...');
+	}
+
+	// the tag is pushed after the publish, so HEAD must already be the remote's branch:
+	// behind, the push fails with the version on npm; ahead, unpushed commits get released
+	log.info(`  Fetching ${RELEASE_REMOTE}/${RELEASE_BRANCH}...`);
+	const fetched = await git.run(['fetch', RELEASE_REMOTE, RELEASE_BRANCH]);
+	if (is_ok(fetched)) {
+		const head = await read_commit(git, 'HEAD');
+		const remote = await read_commit(git, `${RELEASE_REMOTE}/${RELEASE_BRANCH}`);
+		if (head === null || remote === null) {
+			refuse_or_warn(`could not resolve HEAD and ${RELEASE_REMOTE}/${RELEASE_BRANCH}`);
+		} else if (head !== remote) {
+			refuse_or_warn(
+				`HEAD (${head.slice(0, 12)}) is not ${RELEASE_REMOTE}/${RELEASE_BRANCH} (${remote.slice(0, 12)}) — ` +
+					'push or pull until they match'
+			);
+		} else {
+			log.info(`  HEAD matches ${RELEASE_REMOTE}/${RELEASE_BRANCH} (${head.slice(0, 12)})`);
+		}
 	} else {
-		const status = await git.out(['status', '--porcelain']);
-		if (!is_complete(status)) {
-			throw new TaskError('git status failed — is this a git repository?');
-		}
-		const uncommitted = status.stdout.trim();
-		if (uncommitted) {
-			log.warn(`  uncommitted changes in worktree:\n${indent(uncommitted)}`);
-			if (wetrun) throw new TaskError('refusing to publish with uncommitted changes');
-			log.warn('  Continuing dry-run anyway...');
-		}
+		refuse_or_warn(
+			`git fetch ${RELEASE_REMOTE} ${RELEASE_BRANCH} failed (${to_result_message(fetched)})`
+		);
 	}
 
 	// auth matters only to a wetrun
@@ -161,7 +234,8 @@ export const run_release = async (deps: ReleaseDeps, { wetrun }: ReleaseOptions)
 						`package.json is at v${version_before}. To resume from this version:`,
 						`  echo "${version_before}" > ${RELEASE_SENTINEL_PATH}`,
 						'  npm run release -- --wetrun',
-						'To start fresh: git checkout . && changeset'
+						'To start fresh, restore the release files and add a changeset:',
+						`  git checkout -- ${RELEASE_FILES.join(' ')} && changeset`
 					].join('\n')
 				);
 			}
@@ -174,8 +248,10 @@ export const run_release = async (deps: ReleaseDeps, { wetrun }: ReleaseOptions)
 				throw new TaskError(
 					[
 						`version unchanged at ${version} after changeset version`,
-						'Changesets were found but none bumped the root package (@fuzdev/blake3).',
-						'Check that your .changeset/*.md files reference the correct package name.'
+						'Changesets were found but none bumped the root package (@fuzdev/blake3),',
+						'and `changeset version` may have consumed them. Restore the release files,',
+						'fix the package name in the .changeset/*.md files, and re-run:',
+						`  git checkout -- ${RELEASE_FILES.join(' ')}`
 					].join('\n')
 				);
 			}
@@ -187,13 +263,18 @@ export const run_release = async (deps: ReleaseDeps, { wetrun }: ReleaseOptions)
 		log.info('=== Step 2: Read version (dry-run) ===');
 		version = version_before;
 		log.info(`  Current version: ${version}`);
-		if (await has_pending_changesets(project)) {
-			log.info('  Pending changesets found — wetrun will bump version');
-		} else if (initial_sentinel !== null) {
+		if (initial_sentinel === version) {
 			log.info(`  Sentinel found at v${initial_sentinel} — wetrun will retry from that version`);
 		} else {
-			log.warn('  no pending changesets and no sentinel — wetrun would fail');
-			log.warn('  Run `changeset` to add one before publishing.');
+			if (initial_sentinel !== null) {
+				log.warn(`  stale sentinel (v${initial_sentinel}) — wetrun will remove it`);
+			}
+			if (await has_pending_changesets(project)) {
+				log.info('  Pending changesets found — wetrun will bump version');
+			} else {
+				log.warn('  no pending changesets and no retry sentinel — wetrun would fail');
+				log.warn('  Run `changeset` to add one before publishing.');
+			}
 		}
 	}
 	if (!/^\d+\.\d+\.\d+/.test(version)) {
@@ -220,7 +301,7 @@ export const run_release = async (deps: ReleaseDeps, { wetrun }: ReleaseOptions)
 		log.warn(`  Cargo.toml at v${cargo_version}, wetrun would sync to v${version}`);
 	}
 
-	log.info('=== Step 4: Check (typecheck + test + clippy + cargo fmt + tsv format) ===');
+	log.info('=== Step 4: Check (typecheck + test + clippy + rustdoc + cargo fmt + tsv format) ===');
 	await run_script('check');
 
 	log.info('=== Step 5: Build WASM (all targets) ===');
@@ -326,6 +407,12 @@ const indent = (text: string): string =>
 		.split('\n')
 		.map((line) => `    ${line}`)
 		.join('\n');
+
+/** The full hash `rev` resolves to, `null` when git can't resolve it. */
+const read_commit = async (git: Pick<SpawnProgram, 'out'>, rev: string): Promise<string | null> => {
+	const result = await git.out(['rev-parse', '--verify', '--end-of-options', `${rev}^{commit}`]);
+	return is_complete(result) ? result.stdout.trim() || null : null;
+};
 
 const read_package_version = async (project: FsDir): Promise<string> =>
 	JSON.parse(await project.read_text('package.json')).version;

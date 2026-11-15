@@ -294,6 +294,9 @@ npm run release                # dry-run
 npm run release -- --wetrun    # version + check + build + validate + publish
 ```
 
+A wetrun runs only on `main` with a clean tree and `HEAD` at `origin/main`, and prints the git
+commands that finalize the release (commit, tag, push). A failed wetrun resumes when rerun.
+
 ## Contributing
 
 [fuz.dev/contributing](https://www.fuz.dev/contributing)

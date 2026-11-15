@@ -342,7 +342,8 @@ The `fuzdev:blake3` WIT package (`wit/blake3.wit`) defines the component model i
 - **WIT-first design**: component interfaces defined in WIT, implemented via `wit-bindgen`
 - **No backwards compatibility** pre-1.0 — breaking changes are fine
 - **No new dependencies** unless explicitly requested
-- User manages all git operations
+- User manages all git operations, the release finalize (commit, tag, `git push --follow-tags`)
+  included
 
 ## Optimization History
 
@@ -465,15 +466,20 @@ condition must not drop it. `scripts/test_npm.js` asserts the field so it can't 
 changeset                          # add a changeset (during development)
 npm run release                    # dry-run: sync, check, build, validate (no version bump)
 npm run release -- --wetrun        # changeset version + sync + check + build + validate + publish
-# then run the finalize the script prints: a scoped `git add` of the release files
+# then run the finalize commands the task prints: a scoped `git add` of the release files
 # (package.json, CHANGELOG.md, Cargo.toml, Cargo.lock, .changeset),
-# `git commit`, an annotated `git tag -m vX.Y.Z vX.Y.Z`, and `git push --follow-tags`
+# `git commit -m vX.Y.Z`, an annotated `git tag -m vX.Y.Z vX.Y.Z`, and `git push --follow-tags`
 ```
+
+The release commit's message is the bare version (`v0.2.1`), matching the tag and the earlier
+release commits — the one exception to the `fix:`/`feat:`/… prefix convention.
 
 `npm run release` runs these steps (fail-fast):
 
-1. Preflight: find changeset CLI, check git cleanliness (fail on `--wetrun`, skipped in retry mode),
-   check `npm whoami` (wetrun only)
+1. Preflight: find changeset CLI; on `main`; git cleanliness (on a retry, only the release files
+   may be uncommitted); `git fetch origin main` and `HEAD` at `origin/main`, so the publish is
+   built from the commit the finalize tags and its push can't fail; `npm whoami` (wetrun only).
+   A wetrun refuses each git problem, a dry-run warns
 2. Bump version: run `changeset version` (wetrun only), or read current version (dry-run).
    Writes `.changeset/.release-in-progress` sentinel after bumping; detects retry via sentinel.
    Retry mode: sentinel present → skip version bump, proceed from current `package.json` version
@@ -484,6 +490,17 @@ npm run release -- --wetrun        # changeset version + sync + check + build + 
 7. `npm run validate:npm` + `npm run validate:size` + correctness vs test vectors (`npm run test:wasm` + `test:wasm:small`, no rebuild)
 8. `npm publish` from `pkg/` dir (`--dry-run` unless `--wetrun`), skipping already-published packages. Remove sentinel after all succeed.
    A dry-run between releases packs the already-published current version; npm's "cannot publish over" refusal counts as a pass there
+
+### If a wetrun fails
+
+Re-run `npm run release -- --wetrun`. Once the version is bumped, the sentinel makes the rerun
+resume from that version without bumping again, and step 8 skips a package already published.
+The rerun accepts uncommitted release files and nothing else: if the failure needed a code fix,
+commit and push the fix (leaving the release files uncommitted) before rerunning, so the fix
+lands in the history the tag points at. The task's error names the recovery for the cases
+it can't resume on its own — a bump without a sentinel (write the version to
+`.changeset/.release-in-progress`), or changesets consumed without bumping the root package
+(restore the release files with `git checkout`).
 
 ### Version source
 
