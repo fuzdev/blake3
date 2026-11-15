@@ -47,7 +47,7 @@
   "devDependencies": {
     "@fuzdev/fuz_schema": "^0.5.6",
     "@fuzdev/fuz_util": "^0.82.0",
-    "@fuzdev/gro": "^0.232.0",
+    "@fuzdev/gro": "^0.237.0",
     "@fuzdev/tsv": "^0.8.1",
     "@types/node": "^24.10.1",
     "blake3-wasm": "^2.1.5",

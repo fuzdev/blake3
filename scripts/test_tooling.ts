@@ -14,7 +14,7 @@ import { after, describe, test } from 'node:test';
 import { pathToFileURL } from 'node:url';
 
 import { args_parse } from '@fuzdev/fuz_util/args.ts';
-import { to_task_args } from '@fuzdev/gro/args.ts';
+import { to_task_args } from '@fuzdev/gro/task_args.ts';
 import { fs } from '@fuzdev/gro/fs.ts';
 import type { FsDir } from '@fuzdev/gro/fs.ts';
 import type { SpawnCallOptions, SpawnOutput, SpawnResult } from '@fuzdev/gro/spawn.ts';

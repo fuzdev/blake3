@@ -36,8 +36,8 @@ const read_result = async (dir: FsReadDir, path: string): Promise<BenchSuiteResu
 export const task: Task<Args> = {
 	summary: 'compare two bench result files, failing on a significant regression',
 	Args,
-	run: async ({ args, log }) => {
-		const { _: paths, threshold, runtime } = args;
+	run: async ({ task_args, log }) => {
+		const { _: paths, threshold, runtime } = task_args;
 		let base: DiffInput;
 		let current: DiffInput;
 		if (paths.length === 2) {

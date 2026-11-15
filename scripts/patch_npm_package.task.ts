@@ -21,8 +21,8 @@ export type Args = s.Infer<typeof Args>;
 export const task: Task<Args> = {
 	summary: "turn wasm-pack's web target output into the npm package, in place",
 	Args,
-	run: async ({ args, log }) => {
-		const [pkg_path, ...rest] = args._;
+	run: async ({ task_args, log }) => {
+		const [pkg_path, ...rest] = task_args._;
 		if (pkg_path === undefined || rest.length > 0) {
 			throw new TaskError(
 				'pass exactly one package directory: gro task scripts/patch_npm_package.task.ts <pkg-dir>'

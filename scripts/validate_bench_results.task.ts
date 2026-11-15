@@ -2,6 +2,7 @@ import { fs } from '@fuzdev/gro/fs.ts';
 import { SilentError, TaskError, type Task } from '@fuzdev/gro/task.ts';
 
 import { is_fixed_name_result, validate_bench_result } from './lib/bench_result_validate.ts';
+import { format_error_detail } from '@fuzdev/gro/error_detail.ts';
 
 const RESULTS_DIR = 'benches/results';
 
@@ -34,7 +35,7 @@ export const task: Task = {
 				data = JSON.parse(await results.read_text(`${RESULTS_DIR}/${name}`));
 				failures = validate_bench_result(data);
 			} catch (error) {
-				failures = [`(root): invalid JSON: ${error}`];
+				failures = [`(root): unreadable or invalid JSON: ${format_error_detail(error)}`];
 			}
 			if (failures.length === 0) {
 				lines.push(`  PASS: ${name}`);

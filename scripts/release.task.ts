@@ -22,7 +22,7 @@ export type Args = s.Infer<typeof Args>;
 export const task: Task<Args> = {
 	summary: 'release both npm packages: dry-run validation by default, --wetrun to publish',
 	Args,
-	run: async ({ args, log }) => {
+	run: async ({ task_args, log }) => {
 		// npm and changeset get the whole environment: publishing reads the user's registry
 		// config and credentials, and the package scripts npm runs build with the user's toolchain
 		const npm = spawn.find('npm', { pass_env: 'all' });
@@ -35,7 +35,7 @@ export const task: Task<Args> = {
 				changeset: spawn.find('changeset', { pass_env: 'all' }),
 				log: { info: (message) => log.info(message), warn: (message) => log.warn(message) }
 			},
-			args
+			task_args
 		);
 	}
 };

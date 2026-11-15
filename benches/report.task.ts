@@ -6,6 +6,7 @@ import { TaskError, type Task } from '@fuzdev/gro/task.ts';
 
 import type { BenchSuiteResult } from './lib/bench_result.ts';
 import { render_report } from './lib/report.ts';
+import { format_error_detail } from '@fuzdev/gro/error_detail.ts';
 
 const RESULTS_DIR = 'benches/results';
 
@@ -32,7 +33,7 @@ export const task: Task<Args> = {
 			try {
 				runtimes.push(JSON.parse(await project.read_text(path)));
 			} catch (error) {
-				log.error(`Failed to parse ${path}: ${error}`);
+				log.error(`Failed to read or parse ${path}: ${format_error_detail(error)}`);
 			}
 		}
 		// sorted by runtime name for a stable display order (Bun, Deno, Node.js, Wasmtime)
