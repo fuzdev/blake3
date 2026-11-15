@@ -56,13 +56,13 @@ blake3/
 │   └── component/                 # Component WASM output
 ├── scripts/                       # gro tasks (*.task.ts) + Node tests; see scripts/CLAUDE.md
 │   ├── build_wasm.task.ts         # Parallel WASM build orchestrator
-│   ├── patch_npm_package.task.ts  # Post-build patch for npm (stream.js, index.js, browser.js, npm README)
+│   ├── patch_npm_package.task.ts  # Post-build patch for npm (stream.js, index.js, browser.js, gro.js, npm README)
 │   ├── validate_wasm_size.task.ts # WASM binary size regression + package structure check
 │   ├── validate_bench_results.task.ts # Schema validation for bench JSON output
 │   ├── release.task.ts            # Release pipeline (sync + check + build + validate + publish)
 │   ├── lib/                       # The tasks' logic, over handles and programs passed in
 │   ├── test_wasm.ts               # Correctness vs test vectors (node:test, CRATE_DIR env var)
-│   ├── test_npm.js                # Node.js tests for npm packages (index.js + browser.js, PKG_DIR env var)
+│   ├── test_npm.js                # Node.js tests for npm packages (index.js + browser.js + gro.js, PKG_DIR env var)
 │   └── test_tooling.ts            # Unit tests for the tooling modules (no build needed)
 ├── benches/
 │   ├── report.task.ts             # Cross-runtime report (text + markdown)
@@ -438,11 +438,15 @@ web target build and generates files plus patches `package.json` (logic in `scri
 1. `stream.js` — generated from `crates/blake3_wasm_core/stream.ts` via targeted type stripping (single source of truth)
 2. `index.js` — Node.js entry: auto-init via `readFileSync` + `init_sync`, imports stream.js
 3. `browser.js` — Browser/default entry: `init()` for async init, all exports guarded with `_check()` including `Blake3Hasher` (constructor + static methods)
-4. `index.d.ts` — types for all exports including stream functions and `init`/`init_sync`
-5. `README.md` — npm-specific README (user-facing content only, no build/dev/publish sections, package-specific title)
+4. `gro.js` — Gro's runtime entry (the `gro` condition): the package's API over the runtime's native
+   BLAKE3, `@fuzdev/gro/blake3.ts`, a builtin module the runtime serves, so it's never installed
+   and the package declares no dependency on it; the same file for both packages
+5. `index.d.ts` — types for all exports including stream functions and `init`/`init_sync`
+6. `README.md` — npm-specific README (user-facing content only, no build/dev/publish sections, package-specific title)
 
-Package exports include `"./package.json"` self-reference and `"."` with `"node"` / `"default"`
-conditions so Node.js gets zero-config sync init and bundlers (Vite etc.) get the `browser.js`
+Package exports include `"./package.json"` self-reference and `"."` with `"gro"` / `"node"` /
+`"default"` conditions, `gro` first, which only Gro's runtime matches, so it gets the native entry,
+Node.js gets zero-config sync init, and bundlers (Vite etc.) get the `browser.js`
 entry which works with `new URL(...)` WASM patterns natively.
 
 The npm names are kebab-case (`@fuzdev/blake3-wasm`, `@fuzdev/blake3-wasm-small`) while the

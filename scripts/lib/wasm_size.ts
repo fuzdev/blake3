@@ -38,6 +38,7 @@ export const SIMD_SIZE_DIFFERENCE = { min_bytes: 10_000, max_bytes: 25_000 } as 
 export const PACKAGE_REQUIRED_FILES: ReadonlyArray<string> = [
 	'index.js',
 	'browser.js',
+	'gro.js',
 	'stream.js',
 	'index.d.ts',
 	'package.json',

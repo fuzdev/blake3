@@ -18,6 +18,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { registerHooks } from 'node:module';
 
 const pkg_dir = process.env.PKG_DIR;
 if (!pkg_dir) {
@@ -77,7 +78,9 @@ describe(`package shape: ${pkg_dir}`, () => {
 
 	it('exports map: single `.` + package.json self-map; no main/types/module', () => {
 		assert.deepEqual(Object.keys(pkg.exports).sort(), ['.', './package.json']);
-		assert.deepEqual(Object.keys(pkg.exports['.']), ['types', 'node', 'default']);
+		assert.deepEqual(Object.keys(pkg.exports['.']), ['types', 'gro', 'node', 'default']);
+		assert.equal(pkg.exports['.'].gro, './gro.js');
+		assert.ok(pkg.files.includes('gro.js'));
 		assert.ok(!('main' in pkg) && !('types' in pkg) && !('module' in pkg));
 	});
 });
@@ -461,5 +464,84 @@ describe(`browser entry: ${pkg_dir}`, () => {
 			to_hex(browser.hash(encoder.encode('hello'))),
 			to_hex(hash(encoder.encode('hello')))
 		);
+	});
+});
+
+// Gro's runtime entry (gro.js), the `gro` condition: the package's API over the runtime's own
+// `@fuzdev/gro/blake3.ts`, which only that runtime serves. Under Node the specifier resolves to a
+// stand-in with the runtime module's API and no more, a one-shot `hash` and frozen hashers with
+// `update` and `finalize` alone, over this package's own WASM, so gro.js is held to needing
+// nothing else of the runtime and to the Node entry's results.
+describe(`gro entry: ${pkg_dir}`, () => {
+	const stand_in_key = Symbol.for('blake3 npm test: @fuzdev/gro/blake3.ts');
+	/** @param {any} inner */
+	const to_hasher = (inner) =>
+		Object.freeze({
+			__proto__: null,
+			update: (/** @type {Uint8Array} */ data) => inner.update(data),
+			finalize: () => inner.finalize()
+		});
+	/** @type {Record<symbol, unknown>} */ (globalThis)[stand_in_key] = {
+		hash,
+		create_hasher: () => to_hasher(new Blake3Hasher()),
+		create_keyed_hasher: (/** @type {Uint8Array} */ key) => to_hasher(Blake3Hasher.new_keyed(key)),
+		create_derive_key_hasher: (/** @type {string} */ context) =>
+			to_hasher(Blake3Hasher.new_derive_key(context))
+	};
+	const stand_in = `const ns = globalThis[Symbol.for('blake3 npm test: @fuzdev/gro/blake3.ts')];
+export const { hash, create_hasher, create_keyed_hasher, create_derive_key_hasher } = ns;`;
+	registerHooks({
+		resolve: (specifier, context, next_resolve) =>
+			specifier === '@fuzdev/gro/blake3.ts'
+				? { url: `data:text/javascript,${encodeURIComponent(stand_in)}`, shortCircuit: true }
+				: next_resolve(specifier, context)
+	});
+
+	/** @type {any} */
+	let gro;
+	/** @type {any} */
+	let node;
+
+	it('import gro.js', async () => {
+		gro = await import(`../${pkg_dir}/gro.js`);
+		node = await import(`../${pkg_dir}/index.js`);
+	});
+
+	it('exports what the Node entry exports', () => {
+		const shape = (/** @type {Record<string, unknown>} */ ns) =>
+			Object.keys(ns)
+				.sort()
+				.map((name) => [name, typeof ns[name]]);
+		assert.deepEqual(shape(gro), shape(node));
+	});
+
+	it('hashes the test vectors as the Node entry does', async () => {
+		for (const v of test_vectors) {
+			const input = hex_to_bytes(v.input_hex);
+			const key = hex_to_bytes(v.keyed_hash_key_hex);
+			assert.equal(to_hex(gro.hash(input)), v.hash, v.label);
+			assert.equal(to_hex(gro.keyed_hash(key, input)), v.keyed_hash, v.label);
+			assert.equal(to_hex(gro.derive_key(v.derive_key_context, input)), v.derive_key, v.label);
+			const hasher = new gro.Blake3Hasher();
+			for (let at = 0; at < input.length; at += 7) hasher.update(input.subarray(at, at + 7));
+			assert.equal(to_hex(hasher.finalize_and_reset()), v.hash, v.label);
+			assert.equal(to_hex(hasher.finalize()), to_hex(hash(new Uint8Array(0))), v.label);
+			const stream = new ReadableStream({
+				start(c) {
+					c.enqueue(input);
+					c.close();
+				}
+			});
+			assert.equal(to_hex(await gro.hash_stream(stream)), v.hash, v.label);
+		}
+	});
+
+	it('refuses a key that is not 32 bytes as the Node entry does', () => {
+		assert.throws(() => gro.keyed_hash(new Uint8Array(16), new Uint8Array(0)), {
+			message: /key must be exactly 32 bytes/
+		});
+		assert.throws(() => gro.Blake3Hasher.new_keyed(new Uint8Array(16)), {
+			message: /key must be exactly 32 bytes/
+		});
 	});
 });

@@ -109,6 +109,14 @@ const wasm = await fetch('/blake3_wasm_bg.wasm').then((r) => r.arrayBuffer());
 init_sync({ module: wasm });
 ```
 
+### Gro's runtime
+
+On Gro's runtime, `fgro`, the package's `gro` export condition serves the same API over the
+runtime's native BLAKE3, `@fuzdev/gro/blake3.ts`, with no WASM: `init()` resolves at once, and no
+import changes. Data is a `Uint8Array`, as the types say: an array of numbers or a string is a
+`TypeError` there, and a view of a detached buffer throws on every runtime. A hasher's state is
+the runtime's, released once the hasher is collected, so `free()` there only ends the hasher.
+
 ### Hashing a `ReadableStream`
 
 ```ts

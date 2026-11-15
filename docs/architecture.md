@@ -58,11 +58,11 @@ Note: wasm-pack doesn't support `--profile` (conflicts with `--release`), so RUS
 
 ## Package Entry Points
 
-wasm-pack's web target is the one JS target. Each crate's `mod.ts`, the repo's internal entry for its tests and benchmarks, uses `node:fs` + wasm-bindgen's `initSync` to load the WASM synchronously from `pkg/` — under Node.js, Bun, and Deno alike, which all support `node:fs`, so no separate node or deno target is needed. wasm-bindgen's JS glue includes `Symbol.dispose` on `Blake3Hasher`. Stream convenience functions are built by `make_stream_functions` in `blake3_wasm_core/stream.ts` and exported from each entry point. The published packages' own entries (`index.js`, `browser.js`) are generated; see below.
+wasm-pack's web target is the one JS target. Each crate's `mod.ts`, the repo's internal entry for its tests and benchmarks, uses `node:fs` + wasm-bindgen's `initSync` to load the WASM synchronously from `pkg/` — under Node.js, Bun, and Deno alike, which all support `node:fs`, so no separate node or deno target is needed. wasm-bindgen's JS glue includes `Symbol.dispose` on `Blake3Hasher`. Stream convenience functions are built by `make_stream_functions` in `blake3_wasm_core/stream.ts` and exported from each entry point. The published packages' own entries (`index.js`, `browser.js`, `gro.js`) are generated; see below.
 
 **Naming convention:** wasm-bindgen generates `initSync` (camelCase) in its JS output (`blake3_wasm.js`). This is a wasm-bindgen convention and cannot be changed without post-processing the generated file. The wrapper files (`index.js`, `browser.js`) re-export as `init_sync` for snake_case consistency with the rest of the API (`hash`, `keyed_hash`, etc.). `mod.ts` imports `initSync` internally but does not re-export it — its consumers never see the camelCase name.
 
-For npm packages, `scripts/patch_npm_package.task.ts` generates `stream.js` from `stream.ts` via targeted type stripping (single source of truth — no hand-maintained JS copy). The `browser.js` entry guards all public API including `Blake3Hasher` constructor and static methods with an init check. An npm-specific README is generated with user-facing content only.
+For npm packages, `scripts/patch_npm_package.task.ts` generates `stream.js` from `stream.ts` via targeted type stripping (single source of truth — no hand-maintained JS copy). The `browser.js` entry guards all public API including `Blake3Hasher` constructor and static methods with an init check. The `gro.js` entry, the `gro` export condition's, is for Gro's runtime: it builds the package's API on the runtime's native BLAKE3 (`@fuzdev/gro/blake3.ts`, which the runtime serves itself), loading no WASM. An npm-specific README is generated with user-facing content only.
 
 ```
 crates/blake3_wasm_core/
@@ -71,7 +71,7 @@ crates/blake3_wasm_core/
 
 crates/blake3_wasm/
 ├── mod.ts            # internal entry → pkg/ (node:fs + initSync)
-└── pkg/              # @fuzdev/blake3-wasm (index.js, browser.js, wasm-pack output)
+└── pkg/              # @fuzdev/blake3-wasm (index.js, browser.js, gro.js, wasm-pack output)
 
 crates/blake3_wasm_small/
 ├── mod.ts            # internal entry → pkg/ (node:fs + initSync)
@@ -144,7 +144,7 @@ The scripts are gro tasks (`*.task.ts`) on gro's host modules, with their logic 
 
 - **`scripts/test_wasm.ts`** — Correctness: `node:test` suite verifying wasm-bindgen output, through a crate's `mod.ts`, against native blake3 test vectors, including stream batch boundary tests and error path tests for invalid key length. The `CRATE_DIR` env var selects blake3_wasm or blake3_wasm_small. Run via `npm run test:wasm` / `test:wasm:small`.
 - **`scripts/build_wasm.task.ts`** — Parallel WASM build orchestrator: runs the blake3_wasm and blake3_wasm_small builds concurrently.
-- **`scripts/test_npm.js`** — Node.js tests for npm packages (index.js + browser.js init-guard tests). `PKG_DIR` env var selects the package to test.
+- **`scripts/test_npm.js`** — Node.js tests for npm packages (index.js, browser.js init-guard tests, and gro.js over a stand-in for the runtime's module). `PKG_DIR` env var selects the package to test.
 - **`scripts/test_tooling.ts`** — Unit tests for the tooling modules, the release pipeline against fakes, and the release task's flags; needs no build.
 - **`scripts/validate_bench_results.task.ts`** — Schema validation: checks bench result JSON against `BenchSuiteResult` structure to catch Rust/TS drift.
 - **`benches/deno/bench.ts`** — Performance: benchmarks in Deno, loading the same entries as Node.js and Bun

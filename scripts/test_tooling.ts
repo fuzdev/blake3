@@ -9,7 +9,9 @@
  */
 
 import assert from 'node:assert/strict';
-import { describe, test } from 'node:test';
+import { registerHooks } from 'node:module';
+import { after, describe, test } from 'node:test';
+import { pathToFileURL } from 'node:url';
 
 import { args_parse } from '@fuzdev/fuz_util/args.ts';
 import { to_task_args } from '@fuzdev/gro/args.ts';
@@ -25,6 +27,9 @@ import { validate_bench_result } from './lib/bench_result_validate.ts';
 import {
 	NPM_PACKAGE_SOURCES,
 	patch_npm_package,
+	render_browser_js,
+	render_gro_js,
+	render_index_js,
 	render_npm_readme,
 	strip_stream_types,
 	to_wasm_pack_files
@@ -37,6 +42,7 @@ import {
 } from './lib/release.ts';
 import { validate_wasm_size } from './lib/wasm_size.ts';
 import { Args as ReleaseArgs } from './release.task.ts';
+import blake3_reference from 'blake3-wasm';
 
 /** Parses CLI flags for a task the way `gro task <path> ...flags` does. */
 const parse_task_flags = (path: string, flags: Array<string>) => {
@@ -87,6 +93,12 @@ describe('npm package generation', () => {
 			}
 		);
 		assert.strictEqual(to_wasm_pack_files(['index.js', 'browser.js', 'x_bg.js']), null);
+		// the generated entries are never the main JS file, so a package patched twice is the same
+		assert.strictEqual(
+			to_wasm_pack_files(['gro.js', 'stream.js', 'blake3_wasm.js'])?.main_js,
+			'blake3_wasm.js'
+		);
+		assert.strictEqual(to_wasm_pack_files(['gro.js', 'index.js', 'browser.js']), null);
 	});
 
 	test('the npm README stops at Architecture and names the small package', async () => {
@@ -129,6 +141,22 @@ describe('npm package patch', () => {
 		assert.strictEqual(await pkg_dir.read_text('package.json'), '{');
 	});
 
+	test('the exports carry the `gro` condition ahead of `node` and `default`', async () => {
+		await using pkg_dir = await fs.temp_dir('blake3-patch-');
+		await pkg_dir.write('blake3_wasm.js', '');
+		await pkg_dir.write('package.json', '{}');
+		await patch_npm_package({ pkg_dir, project: fs.project.readonly(), log: () => {} });
+		const pkg = JSON.parse(await pkg_dir.read_text('package.json'));
+		assert.deepStrictEqual(pkg.exports['.'], {
+			types: './index.d.ts',
+			gro: './gro.js',
+			node: './index.js',
+			default: './browser.js'
+		});
+		assert.ok(pkg.files.includes('gro.js'));
+		assert.strictEqual(await pkg_dir.read_text('gro.js'), render_gro_js());
+	});
+
 	test('a package.json that is not an object is refused before anything is written', async () => {
 		await using pkg_dir = await fs.temp_dir('blake3-patch-');
 		await pkg_dir.write('blake3_wasm.js', '');
@@ -159,7 +187,7 @@ describe('wasm size validation', () => {
 		for (const p of packages) {
 			await dir.mkdir(p.dir, { recursive: true });
 			await dir.write(`${p.dir}/${p.wasm}`, new Uint8Array(p.bytes));
-			for (const file of ['index.js', 'browser.js', 'stream.js', 'index.d.ts']) {
+			for (const file of ['index.js', 'browser.js', 'gro.js', 'stream.js', 'index.d.ts']) {
 				await dir.write(`${p.dir}/${file}`, '');
 			}
 			for (const file of ['package.json', 'README.md', 'LICENSE']) {
@@ -168,6 +196,217 @@ describe('wasm size validation', () => {
 		}
 		const report = await validate_wasm_size(dir.readonly());
 		assert.strictEqual(report.failed, 0, report.lines.join('\n'));
+	});
+});
+
+/** Where the stand-in for `@fuzdev/gro/blake3.ts` finds the exports it gives. */
+const STAND_IN = Symbol.for('blake3 tooling test: @fuzdev/gro/blake3.ts');
+
+/** The stand-in's source, a module that only the resolve hook below names. */
+const STAND_IN_SOURCE = `const ns = globalThis[Symbol.for('blake3 tooling test: @fuzdev/gro/blake3.ts')];
+export const { hash, create_hasher, create_keyed_hasher, create_derive_key_hasher } = ns;`;
+
+/**
+ * A stand-in for `@fuzdev/gro/blake3.ts`, Gro's runtime module the gro entry imports, which only
+ * that runtime serves: its API and no more, a one-shot `hash` and frozen hashers with `update`
+ * and `finalize` alone, here over the reference `blake3-wasm`, so the entry is held to needing
+ * nothing else of the runtime. A hasher keeps its input to hash at `finalize`, which is fine
+ * for a test and is what the runtime's native state avoids.
+ */
+const create_stand_in = () => {
+	const check = (data: unknown): Uint8Array => {
+		if (!(data instanceof Uint8Array)) throw new TypeError('blake3 hashes a Uint8Array');
+		return data;
+	};
+	const to_hasher = (digest: (input: Uint8Array) => Uint8Array) => {
+		const chunks: Array<Uint8Array> = [];
+		return Object.freeze({
+			__proto__: null,
+			update: (data: Uint8Array): void => {
+				chunks.push(check(data).slice());
+			},
+			finalize: (): Uint8Array => new Uint8Array(digest(Buffer.concat(chunks)))
+		});
+	};
+	return {
+		hash: (data: Uint8Array): Uint8Array =>
+			new Uint8Array(blake3_reference.hash(check(data)) as Buffer),
+		create_hasher: () => to_hasher((input) => blake3_reference.hash(input) as Buffer),
+		create_keyed_hasher: (key: Uint8Array) => {
+			if (check(key).length !== 32)
+				throw new RangeError("a keyed hasher's key is exactly 32 bytes");
+			const held = Buffer.from(key);
+			return to_hasher((input) => blake3_reference.keyedHash(held, input) as Buffer);
+		},
+		create_derive_key_hasher: (context: string) =>
+			to_hasher((input) => blake3_reference.deriveKey(context, input) as Buffer)
+	};
+};
+
+/** The package's entries, generated into a directory with stubs for wasm-pack's output. */
+interface Entries {
+	gro: Record<string, any>;
+	index: Record<string, unknown>;
+	browser: Record<string, unknown>;
+}
+
+let entries: Promise<Entries> | undefined;
+let entries_dir: Awaited<ReturnType<typeof fs.temp_dir>> | undefined;
+
+/**
+ * Generates `gro.js`, `index.js`, `browser.js`, and `stream.js` into a temp directory, with
+ * stubs for wasm-pack's glue and binary, and imports each, the gro entry with
+ * `@fuzdev/gro/blake3.ts` resolved to the stand-in.
+ */
+const load_entries = (): Promise<Entries> =>
+	(entries ??= (async () => {
+		(globalThis as Record<symbol, unknown>)[STAND_IN] = create_stand_in();
+		registerHooks({
+			resolve: (specifier, context, next_resolve) =>
+				specifier === '@fuzdev/gro/blake3.ts'
+					? {
+							url: `data:text/javascript,${encodeURIComponent(STAND_IN_SOURCE)}`,
+							shortCircuit: true
+						}
+					: next_resolve(specifier, context)
+		});
+		const dir = (entries_dir = await fs.temp_dir('blake3-gro-entry-'));
+		const files = to_wasm_pack_files(['blake3_wasm.js'])!;
+		await dir.write('package.json', '{"type": "module"}');
+		await dir.write(
+			'blake3_wasm.js',
+			'export default async () => {};\nexport const initSync = () => {};\n' +
+				'export class Blake3Hasher {}\nexport const derive_key = () => {};\n' +
+				'export const hash = () => {};\nexport const keyed_hash = () => {};\n'
+		);
+		await dir.write(files.wasm_file, new Uint8Array(0));
+		await dir.write(
+			'stream.js',
+			strip_stream_types(await fs.project.read_text(NPM_PACKAGE_SOURCES.stream_ts))
+		);
+		await dir.write('gro.js', render_gro_js());
+		await dir.write('index.js', render_index_js(files));
+		await dir.write('browser.js', render_browser_js(files));
+		const load = (file: string) => import(pathToFileURL(`${dir.path}/${file}`).href);
+		return {
+			gro: await load('gro.js'),
+			index: await load('index.js'),
+			browser: await load('browser.js')
+		};
+	})());
+
+after(async () => {
+	await entries_dir?.[Symbol.asyncDispose]();
+});
+
+/** `bytes` in hex. */
+const to_hex = (bytes: Uint8Array): string => Buffer.from(bytes).toString('hex');
+
+/** A test vector, as `test/test_vectors.json` holds each. */
+interface TestVector {
+	label: string;
+	input_hex: string;
+	hash: string;
+	keyed_hash: string;
+	keyed_hash_key_hex: string;
+	derive_key: string;
+	derive_key_context: string;
+}
+
+describe('the gro entry, over a stand-in for the runtime', () => {
+	test('exports what the Node and default entries export', async () => {
+		const { gro, index, browser } = await load_entries();
+		const shape = (ns: Record<string, unknown>) =>
+			Object.keys(ns)
+				.sort()
+				.map((name) => [name, typeof ns[name]]);
+		assert.deepStrictEqual(shape(gro), shape(index));
+		assert.deepStrictEqual(shape(gro), shape(browser));
+	});
+
+	test('init resolves at once and init_sync does nothing', async () => {
+		const { gro } = await load_entries();
+		assert.strictEqual(await gro.init(), undefined);
+		assert.strictEqual(gro.init_sync({ module: new Uint8Array(0) }), undefined);
+	});
+
+	test('hashes the test vectors one-shot, by a hasher, and by a stream', async () => {
+		const { gro } = await load_entries();
+		const vectors: Array<TestVector> = JSON.parse(
+			await fs.project.read_text('test/test_vectors.json')
+		);
+		assert.ok(vectors.length > 0);
+		for (const vector of vectors) {
+			const input = Buffer.from(vector.input_hex, 'hex');
+			const key = Buffer.from(vector.keyed_hash_key_hex, 'hex');
+			const context = vector.derive_key_context;
+			assert.strictEqual(to_hex(gro.hash(input)), vector.hash, vector.label);
+			assert.strictEqual(to_hex(gro.keyed_hash(key, input)), vector.keyed_hash, vector.label);
+			assert.strictEqual(to_hex(gro.derive_key(context, input)), vector.derive_key, vector.label);
+			const hasher = new gro.Blake3Hasher();
+			for (let at = 0; at < input.length; at += 7) hasher.update(input.subarray(at, at + 7));
+			assert.strictEqual(to_hex(hasher.finalize()), vector.hash, vector.label);
+			const stream = (): ReadableStream<Uint8Array> =>
+				new ReadableStream({
+					start(controller) {
+						for (let at = 0; at < input.length; at += 5000) {
+							controller.enqueue(input.subarray(at, at + 5000));
+						}
+						controller.close();
+					}
+				});
+			assert.strictEqual(to_hex(await gro.hash_stream(stream())), vector.hash, vector.label);
+			assert.strictEqual(
+				to_hex(await gro.keyed_hash_stream(key, stream())),
+				vector.keyed_hash,
+				vector.label
+			);
+			assert.strictEqual(
+				to_hex(await gro.derive_key_stream(context, stream())),
+				vector.derive_key,
+				vector.label
+			);
+		}
+	});
+
+	test("a hasher's reset and finalize_and_reset keep its mode, and free ends it", async () => {
+		const { gro } = await load_entries();
+		const key = new Uint8Array(32).fill(7);
+		const hello = new TextEncoder().encode('hello');
+		const keyed = gro.Blake3Hasher.new_keyed(key);
+		key.fill(0); // the hasher keeps the key it was given
+		keyed.update(hello);
+		const digest = to_hex(keyed.finalize_and_reset());
+		assert.strictEqual(digest, to_hex(gro.keyed_hash(new Uint8Array(32).fill(7), hello)));
+		keyed.update(hello);
+		assert.strictEqual(to_hex(keyed.finalize()), digest);
+		keyed.reset();
+		keyed.update(hello);
+		assert.strictEqual(to_hex(keyed.finalize()), digest);
+		const derived = gro.Blake3Hasher.new_derive_key('ctx');
+		derived.update(hello);
+		derived.reset();
+		assert.strictEqual(
+			to_hex(derived.finalize()),
+			to_hex(gro.derive_key('ctx', new Uint8Array(0)))
+		);
+		assert.ok(derived instanceof gro.Blake3Hasher);
+		assert.strictEqual(derived[Symbol.dispose], derived.free);
+		derived.free();
+		derived.free();
+		assert.throws(() => derived.update(hello), /used after free/);
+		assert.throws(() => derived.finalize(), /used after free/);
+	});
+
+	test("a key that isn't 32 bytes is refused as the package refuses it", async () => {
+		const { gro } = await load_entries();
+		const short = new Uint8Array(16);
+		assert.throws(() => gro.keyed_hash(short, new Uint8Array(0)), /key must be exactly 32 bytes/);
+		assert.throws(() => gro.Blake3Hasher.new_keyed(short), /key must be exactly 32 bytes/);
+		await assert.rejects(
+			gro.keyed_hash_stream(short, new ReadableStream()),
+			/key must be exactly 32 bytes/
+		);
 	});
 });
 

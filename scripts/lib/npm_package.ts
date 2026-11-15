@@ -7,6 +7,8 @@
  * - `index.js`, the Node entry, initialized synchronously at import via `readFileSync` + `init_sync`
  * - `browser.js`, the browser and default entry, which needs `await init()` before use and
  *   guards every export until then
+ * - `gro.js`, the entry for Gro's runtime (the `gro` condition), the package's API over the
+ *   runtime's native BLAKE3, `@fuzdev/gro/blake3.ts`, with no WASM
  * - `index.d.ts`, the declarations for both entries
  * - `README.md`, the repo README's user-facing part, and `LICENSE`
  *
@@ -52,6 +54,7 @@ export const to_wasm_pack_files = (names: ReadonlyArray<string>): WasmPackFiles 
 			!name.includes('_bg') &&
 			name !== 'index.js' &&
 			name !== 'browser.js' &&
+			name !== 'gro.js' &&
 			name !== 'stream.js'
 	);
 	if (!main_js) return null;
@@ -202,7 +205,123 @@ export const { hash_stream, keyed_hash_stream, derive_key_stream } = make_stream
 `;
 
 /**
- * The declarations for both entries. The core API re-exports wasm-bindgen's types, while
+ * The entry for Gro's runtime, which matches the `gro` export condition: the package's API over
+ * the runtime's own BLAKE3, `@fuzdev/gro/blake3.ts`, a builtin module of the binary that needs no
+ * grant, so the package works there unchanged with no WASM to load. The specifier is served by
+ * the runtime ahead of any package lookup, never installed, and no other runtime matches the
+ * condition. The module's API is smaller than the package's (a one-shot hash and hashers with
+ * `update` and `finalize`), and this file makes the rest of the package's from it: the keyed and
+ * derive-key one-shots, and a hasher's `reset`, `finalize_and_reset`, and `free`. It's the same
+ * for both packages, since it reaches no WASM.
+ */
+export const render_gro_js = (): string => `// Gro's runtime's entry, the \`gro\` condition:
+// this package's API over the runtime's native BLAKE3, \`@fuzdev/gro/blake3.ts\`,
+// which the runtime serves itself.
+import {
+	create_derive_key_hasher,
+	create_hasher,
+	create_keyed_hasher,
+	hash as _hash,
+} from '@fuzdev/gro/blake3.ts';
+import { make_stream_functions } from './stream.js';
+
+/** Initialize the WASM module: nothing to do on Gro's runtime, whose BLAKE3 is native. */
+export async function init() {}
+
+/** Synchronously initialize the WASM module: nothing to do on Gro's runtime. */
+export function init_sync() {}
+
+/** The runtime's keyed hasher of \`key\`, which must be exactly 32 bytes. */
+function _keyed(key) {
+	if (key.length !== 32) throw new Error('key must be exactly 32 bytes');
+	return create_keyed_hasher(key);
+}
+
+/** The digest of \`data\` by \`hasher\`. */
+function _digest(hasher, data) {
+	hasher.update(data);
+	return hasher.finalize();
+}
+
+/** Hash data and return the 32-byte digest. */
+export function hash(data) { return _hash(data); }
+
+/** Keyed hash (MAC). Key must be exactly 32 bytes. */
+export function keyed_hash(key, data) { return _digest(_keyed(key), data); }
+
+/** Derive a key from context string and key material. Returns 32 bytes. */
+export function derive_key(context, key_material) {
+	return _digest(create_derive_key_hasher(context), key_material);
+}
+
+// what the static factories pass the constructor, so \`new Blake3Hasher()\` takes no argument
+const _MAKE = Symbol('Blake3Hasher make');
+
+/**
+ * Streaming BLAKE3 hasher supporting incremental updates, over a hasher of the runtime's,
+ * which \`reset\` replaces with a new one of the same mode and \`free\` drops.
+ */
+export class Blake3Hasher {
+	#make;
+	#inner;
+
+	/** Create a new hasher. */
+	constructor(...args) {
+		const make = args[0] === _MAKE ? args[1] : create_hasher;
+		this.#inner = args[0] === _MAKE ? args[2] : make();
+		this.#make = make;
+	}
+
+	/** Create a new keyed hasher. Key must be exactly 32 bytes. */
+	static new_keyed(key) {
+		const inner = _keyed(key);
+		const held = key.slice();
+		return new Blake3Hasher(_MAKE, () => create_keyed_hasher(held), inner);
+	}
+
+	/** Create a new key-derivation hasher. */
+	static new_derive_key(context) {
+		return new Blake3Hasher(
+			_MAKE,
+			() => create_derive_key_hasher(context),
+			create_derive_key_hasher(context),
+		);
+	}
+
+	#live() {
+		if (this.#inner === null) throw new Error('Blake3Hasher: used after free()');
+		return this.#inner;
+	}
+
+	/** Add data to the hasher. */
+	update(data) { this.#live().update(data); }
+
+	/** Finalize and return the 32-byte digest. */
+	finalize() { return this.#live().finalize(); }
+
+	/** Finalize the current hash and reset the hasher. Returns the 32-byte digest. */
+	finalize_and_reset() {
+		const digest = this.#live().finalize();
+		this.#inner = this.#make();
+		return digest;
+	}
+
+	/** Reset the hasher to its initial state. */
+	reset() {
+		this.#live();
+		this.#inner = this.#make();
+	}
+
+	/** Release the hasher, which the runtime also does once it's collected. */
+	free() { this.#inner = null; }
+}
+if (Symbol.dispose) Blake3Hasher.prototype[Symbol.dispose] = Blake3Hasher.prototype.free;
+
+export const { hash_stream, keyed_hash_stream, derive_key_stream } = make_stream_functions(Blake3Hasher);
+`;
+
+/**
+ * The declarations for every entry. The core API re-exports wasm-bindgen's types, while
  * `init` and `init_sync` get clean signatures that don't leak wasm-bindgen's internals
  * (`InitOutput` with raw WASM function pointers).
  */
@@ -246,6 +365,7 @@ export const patch_package_json = (
 		'./package.json': './package.json',
 		'.': {
 			types: './index.d.ts',
+			gro: './gro.js',
 			node: './index.js',
 			default: './browser.js'
 		}
@@ -254,6 +374,7 @@ export const patch_package_json = (
 		'index.js',
 		'index.d.ts',
 		'browser.js',
+		'gro.js',
 		'stream.js',
 		main_js,
 		dts_file,
@@ -394,6 +515,8 @@ export const patch_npm_package = async ({
 	log('Created index.js');
 	await pkg_dir.write('browser.js', render_browser_js(files));
 	log('Created browser.js');
+	await pkg_dir.write('gro.js', render_gro_js());
+	log('Created gro.js');
 	await pkg_dir.write('index.d.ts', render_index_dts(files));
 	log('Created index.d.ts');
 	await pkg_dir.write('package.json', JSON.stringify(pkg, null, '\t') + '\n');
