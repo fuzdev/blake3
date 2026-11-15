@@ -414,6 +414,10 @@ Bun's WASM engine has poor SIMD performance — confirmed by blake3_wasm_small b
 Uses [changesets](https://github.com/changesets/changesets) for version management and changelog.
 Prerequisite: `npm i -g @changesets/cli`
 
+The root package is private, so `.changeset/config.json` sets
+`"privatePackages": { "version": true, "tag": false }` — changesets 3 skips private packages by
+default, and the release preflight fails without it.
+
 Both `@fuzdev/blake3-wasm` and `@fuzdev/blake3-wasm-small` are published to npm.
 
 ### Version flow

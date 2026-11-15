@@ -632,7 +632,7 @@ const create_fake_release = (project: FsDir, options: FakeReleaseOptions = {}) =
 
 const write_release_project = async (
 	project: FsDir,
-	{ pending = true, cargo_version = '0.2.0' } = {}
+	{ pending = true, cargo_version = '0.2.0', private_packages = true } = {}
 ) => {
 	await project.write('package.json', JSON.stringify({ name: '@fuzdev/blake3', version: '0.2.0' }));
 	await project.write(
@@ -640,6 +640,12 @@ const write_release_project = async (
 		`[workspace.package]\nversion = "${cargo_version}"\n\n[workspace.dependencies]\nblake3 = { version = "1.8" }\n`
 	);
 	await project.mkdir('.changeset');
+	await project.write(
+		'.changeset/config.json',
+		JSON.stringify(
+			private_packages ? { privatePackages: { version: true, tag: false } } : { access: 'public' }
+		)
+	);
 	if (pending)
 		await project.write('.changeset/some-change.md', '---\n"@fuzdev/blake3": minor\n---\n');
 };
@@ -734,6 +740,17 @@ describe('release pipeline, against fakes', () => {
 			[`${project.path}/crates/blake3_wasm_small/pkg`]
 		);
 		assert.strictEqual(await project.exists(RELEASE_SENTINEL_PATH), false);
+	});
+
+	test('a config that skips private packages fails before anything runs', async () => {
+		await using project = await fs.temp_dir('blake3-release-');
+		await write_release_project(project, { private_packages: false });
+		for (const wetrun of [false, true]) {
+			const { deps, calls } = create_fake_release(project, { bump_to: '0.3.0' });
+			await assert.rejects(run_release(deps, { wetrun }), /privatePackages/);
+			assert.deepStrictEqual(scripts_run(calls), []);
+			assert.ok(!calls.some((c) => c.program === 'changeset'));
+		}
 	});
 
 	test('a retry refuses changes outside the release files', async () => {

@@ -135,6 +135,14 @@ export const run_release = async (deps: ReleaseDeps, { wetrun }: ReleaseOptions)
 		throw new TaskError('changeset CLI not found: install it with `npm i -g @changesets/cli`');
 	}
 	log.info(`  changeset CLI: ${changeset.path}`);
+	// the root package is private, which changesets skips unless the config opts it in
+	// (the default was `true` before changesets 3), so a wetrun would bump nothing
+	if (!(await versions_private_packages(project))) {
+		throw new TaskError(
+			'.changeset/config.json must set `"privatePackages": { "version": true, "tag": false }` —\n' +
+				'the root package @fuzdev/blake3 is private, and changesets 3 skips private packages by default'
+		);
+	}
 
 	// a wetrun refuses what a dry-run warns about: the published packages must be built from
 	// the commit the tag lands on, and the finalize's push must not fail after the publish
@@ -250,7 +258,7 @@ export const run_release = async (deps: ReleaseDeps, { wetrun }: ReleaseOptions)
 						`version unchanged at ${version} after changeset version`,
 						'Changesets were found but none bumped the root package (@fuzdev/blake3),',
 						'and `changeset version` may have consumed them. Restore the release files,',
-						'fix the package name in the .changeset/*.md files, and re-run:',
+						'check the package name in the .changeset/*.md files, and re-run:',
 						`  git checkout -- ${RELEASE_FILES.join(' ')}`
 					].join('\n')
 				);
@@ -412,6 +420,14 @@ const indent = (text: string): string =>
 const read_commit = async (git: Pick<SpawnProgram, 'out'>, rev: string): Promise<string | null> => {
 	const result = await git.out(['rev-parse', '--verify', '--end-of-options', `${rev}^{commit}`]);
 	return is_complete(result) ? result.stdout.trim() || null : null;
+};
+
+/** Whether `.changeset/config.json` has changesets version private packages, as the root is. */
+const versions_private_packages = async (project: FsDir): Promise<boolean> => {
+	const text = await project.read_text_if_exists('.changeset/config.json');
+	if (text === null) return false;
+	const { privatePackages } = JSON.parse(text);
+	return privatePackages === true || privatePackages?.version === true;
 };
 
 const read_package_version = async (project: FsDir): Promise<string> =>
