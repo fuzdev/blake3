@@ -1,5 +1,11 @@
 # @fuzdev/blake3
 
+## 0.2.1
+
+### Patch Changes
+
+- 4d6da87: feat: add a `gro` export condition, `gro.js`, the package's API over Gro's runtime's native BLAKE3 (`@fuzdev/gro/blake3.ts`), so the package runs on `fgro` with no WASM
+
 ## 0.2.0
 
 ### Minor Changes
