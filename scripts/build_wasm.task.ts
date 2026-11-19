@@ -1,5 +1,6 @@
 import { spawn } from '@fuzdev/gro/spawn.ts';
-import { SilentError, TaskError, type Task } from '@fuzdev/gro/task.ts';
+import type { Task } from '@fuzdev/gro/task.ts';
+import { SilentError, TaskError } from '@fuzdev/gro/task_error.ts';
 
 /** The package scripts that build each WASM package, run concurrently. */
 const BUILDS: ReadonlyArray<{ label: string; script: string }> = [

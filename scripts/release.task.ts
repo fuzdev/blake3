@@ -3,7 +3,8 @@ import * as s from '@fuzdev/fuz_schema/schema.ts';
 import { fs } from '@fuzdev/gro/fs.ts';
 import { to_git_program } from '@fuzdev/gro/git.ts';
 import { spawn } from '@fuzdev/gro/spawn.ts';
-import { TaskError, type Task } from '@fuzdev/gro/task.ts';
+import type { Task } from '@fuzdev/gro/task.ts';
+import { TaskError } from '@fuzdev/gro/task_error.ts';
 
 import { run_release } from './lib/release.ts';
 

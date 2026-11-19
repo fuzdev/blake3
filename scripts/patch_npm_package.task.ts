@@ -2,7 +2,10 @@ import { meta } from '@fuzdev/fuz_schema/meta.ts';
 import * as s from '@fuzdev/fuz_schema/schema.ts';
 import { fs } from '@fuzdev/gro/fs.ts';
 import { create_fs_paths } from '@fuzdev/gro/fs_paths.ts';
-import { TaskError, type Task } from '@fuzdev/gro/task.ts';
+import { cwd } from '@fuzdev/gro/cwd.ts';
+import { env } from '@fuzdev/gro/env.ts';
+import type { Task } from '@fuzdev/gro/task.ts';
+import { TaskError } from '@fuzdev/gro/task_error.ts';
 
 import { patch_npm_package } from './lib/npm_package.ts';
 
@@ -28,7 +31,7 @@ export const task: Task<Args> = {
 				'pass exactly one package directory: gro task scripts/patch_npm_package.task.ts <pkg-dir>'
 			);
 		}
-		const fs_paths = create_fs_paths(fs);
+		const fs_paths = create_fs_paths(fs, { cwd: cwd(), home: env.get('HOME') });
 		const opened = await fs_paths.open_dir_path(pkg_path);
 		const info = opened && (await opened.dir.stat(opened.path || '.'));
 		if (!opened || info?.kind !== 'directory') {

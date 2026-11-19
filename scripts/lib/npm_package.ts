@@ -20,7 +20,7 @@
  */
 
 import type { FsDir, FsReadDir } from '@fuzdev/gro/fs.ts';
-import { TaskError } from '@fuzdev/gro/task.ts';
+import { TaskError } from '@fuzdev/gro/task_error.ts';
 
 /** The repo files the package is generated from, relative to the project. */
 export const NPM_PACKAGE_SOURCES = {

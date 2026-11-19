@@ -1,5 +1,6 @@
 import { fs } from '@fuzdev/gro/fs.ts';
-import { SilentError, type Task } from '@fuzdev/gro/task.ts';
+import type { Task } from '@fuzdev/gro/task.ts';
+import { SilentError } from '@fuzdev/gro/task_error.ts';
 
 import { validate_wasm_size } from './lib/wasm_size.ts';
 

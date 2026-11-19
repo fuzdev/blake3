@@ -1,5 +1,6 @@
 import { fs } from '@fuzdev/gro/fs.ts';
-import { SilentError, TaskError, type Task } from '@fuzdev/gro/task.ts';
+import type { Task } from '@fuzdev/gro/task.ts';
+import { SilentError, TaskError } from '@fuzdev/gro/task_error.ts';
 
 import { is_fixed_name_result, validate_bench_result } from './lib/bench_result_validate.ts';
 import { format_error_detail } from '@fuzdev/gro/error_detail.ts';

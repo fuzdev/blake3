@@ -18,7 +18,7 @@
 
 import type { FsDir } from '@fuzdev/gro/fs.ts';
 import type { SpawnOutput, SpawnProgram, SpawnResult } from '@fuzdev/gro/spawn.ts';
-import { TaskError } from '@fuzdev/gro/task.ts';
+import { TaskError } from '@fuzdev/gro/task_error.ts';
 
 /** Marks a wetrun between its version bump and its last publish, for retry detection. */
 export const RELEASE_SENTINEL_PATH = '.changeset/.release-in-progress';

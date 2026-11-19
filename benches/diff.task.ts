@@ -3,7 +3,10 @@ import * as s from '@fuzdev/fuz_schema/schema.ts';
 import type { FsReadDir } from '@fuzdev/gro/fs.ts';
 import { fs } from '@fuzdev/gro/fs.ts';
 import { create_fs_paths } from '@fuzdev/gro/fs_paths.ts';
-import { SilentError, TaskError, type Task } from '@fuzdev/gro/task.ts';
+import { cwd } from '@fuzdev/gro/cwd.ts';
+import { env } from '@fuzdev/gro/env.ts';
+import type { Task } from '@fuzdev/gro/task.ts';
+import { SilentError, TaskError } from '@fuzdev/gro/task_error.ts';
 
 import type { BenchSuiteResult } from './lib/bench_result.ts';
 import { render_diff, type DiffInput } from './lib/diff.ts';
@@ -44,7 +47,7 @@ export const task: Task<Args> = {
 			if (runtime !== undefined) {
 				throw new TaskError('--runtime selects the latest runs, so it takes no file paths');
 			}
-			const fs_paths = create_fs_paths(fs);
+			const fs_paths = create_fs_paths(fs, { cwd: cwd(), home: env.get('HOME') });
 			const [base_path, current_path] = paths as [string, string];
 			const base_file = await fs_paths.open_path(base_path);
 			const current_file = await fs_paths.open_path(current_path);
