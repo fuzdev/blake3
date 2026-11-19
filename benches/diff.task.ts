@@ -6,7 +6,7 @@ import { create_fs_paths } from '@fuzdev/gro/fs_paths.ts';
 import { cwd } from '@fuzdev/gro/cwd.ts';
 import { env } from '@fuzdev/gro/env.ts';
 import type { Task } from '@fuzdev/gro/task.ts';
-import { SilentError, TaskError } from '@fuzdev/gro/task_error.ts';
+import { ReportedError, TaskError } from '@fuzdev/gro/task_error.ts';
 
 import type { BenchSuiteResult } from './lib/bench_result.ts';
 import { render_diff, type DiffInput } from './lib/diff.ts';
@@ -64,7 +64,7 @@ export const task: Task<Args> = {
 
 		const report = render_diff(base, current, threshold);
 		log.raw(report.lines.join('\n'));
-		if (report.regressions > 0) throw new SilentError();
+		if (report.regressions > 0) throw new ReportedError();
 	}
 };
 

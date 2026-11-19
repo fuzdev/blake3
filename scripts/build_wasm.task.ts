@@ -1,6 +1,6 @@
 import { spawn } from '@fuzdev/gro/spawn.ts';
 import type { Task } from '@fuzdev/gro/task.ts';
-import { SilentError, TaskError } from '@fuzdev/gro/task_error.ts';
+import { ReportedError, TaskError } from '@fuzdev/gro/task_error.ts';
 
 /** The package scripts that build each WASM package, run concurrently. */
 const BUILDS: ReadonlyArray<{ label: string; script: string }> = [
@@ -36,7 +36,7 @@ export const task: Task = {
 		);
 		if (failed.length > 0) {
 			log.error(`${failed.length} build(s) failed: ${failed.join(', ')}`);
-			throw new SilentError();
+			throw new ReportedError();
 		}
 		log.info('All WASM targets built successfully.');
 	}
